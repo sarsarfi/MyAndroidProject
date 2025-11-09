@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">MyDictionary</string>
+    <string name="add_newword"> Add New Word </string>
+    <string name="list_of_words"> Word List </string>
+    <string name="quize"> Guess Word Quiz </string>
+    <string name="add_new_word">Add a new word</string>
+    <string name="english_word">English word</string>
+    <string name="persian_meaning">Persian meaning</string>
+    <string name="save_vocabulary">Save vocabulary</string>
+    <string name="submit">Submit</string>
+    <string name="skip">Skip</string>
+    <string name="score">Score: %d</string>
+    <string name="word_count">%d/10</string>
+    <string name="instructions">Correct the jumbled word.</string>
+    <string name="enter_your_word">Enter your word</string>
+    <string name="congratulations">Congratulations!</string>
+    <string name="you_scored">"You scored: %d"</string>
+    <string name="exit">Exit</string>
+    <string name="play_again">Play Again</string>
+    <string name="description_statrt_screen">Please enter the new word.</string>
+    <string name="back_button">Back</string>
+    <string name="empity_list">You haven\'t added a word to your dictionary yet !!</string>
+</resources>
