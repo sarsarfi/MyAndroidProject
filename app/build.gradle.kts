@@ -1,20 +1,17 @@
 plugins {
-    // ۱. تعریف پلاگین‌های اصلی
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.ksp) // KSP برای Room و بقیه
-    // ❌ alias(libs.plugins.kotlin.compose) حذف شد، زیرا باعث خطا می‌شود
+    alias(libs.plugins.ksp)
 }
 
 android {
-    // ۲. بلوک android فقط باید یک بار وجود داشته باشد
     namespace = "com.example.mydictionary"
-    compileSdk = 36 // یا آخرین نسخه SDK موجود
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.mydictionary"
         minSdk = 24
-        targetSdk = 36 // یا آخرین نسخه SDK موجود
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -30,30 +27,27 @@ android {
             )
         }
     }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
-        // فعال‌سازی Compose Compiler به روش صحیح
         compose = true
     }
     composeOptions {
-        // ✅ فعال‌سازی کامپایلر Compose سازگار با Kotlin 1.9.22 (نسخه 1.5.8)
         kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
 }
 
 dependencies {
-    // ۳. وابستگی‌های تمیز شده
-
-    // Compose BOM (باید همیشه اولین مورد باشد)
+    // Compose BOM
     implementation(platform(libs.androidx.compose.bom))
 
-    // کتابخانه‌های هسته و Compose
+    // Core + Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -62,16 +56,15 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.foundation)
-
-    // ناوبری Compose
     implementation(libs.androidx.navigation.compose)
+    implementation("androidx.compose.material:material-icons-extended")
 
-    // Room - استفاده از Version Catalogs برای خوانایی و مدیریت بهتر
+    // Room (سازگار با Kotlin 1.9.22)
     implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx) // برای پشتیبانی از Kotlin Coroutines
+    implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
-    // تست
+    // Test
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

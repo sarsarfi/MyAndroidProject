@@ -13,4 +13,15 @@ class offlineWordsRepository(private val wordDao: WordDao) : WordsRepository {
     override suspend fun updateWord(word: Word) = wordDao.update(word)
 
     override suspend fun deleteWord(word: Word) = wordDao.delete(word)
+
+    override fun getAllSkippedWords(): Flow<List<Word>> = wordDao.getSkippedWords()
+
+    override suspend fun updateLeitnerBox(wordId: Int, newLeitnerBox: Int) = wordDao.updateWordBox(wordId,newLeitnerBox)
+
+    override suspend fun updateNextReviewDate(wordId: Int, nextReviewDate: Long) = wordDao.updateNextReviewDate(wordId, nextReviewDate )
+
+    override fun getAllWordForReview(currentTime : Long): Flow<List<Word>> = wordDao.getAllWordForReview(currentTime)
+
+    override suspend fun updateSkipStatus (wordId: Int, isSkipped: Boolean) = wordDao.updateSkipStatus(wordId , isSkipped)
+
 }

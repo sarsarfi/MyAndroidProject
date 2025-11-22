@@ -13,6 +13,12 @@ import com.example.mydictionary.ui.home.HomeDestination
 import com.example.mydictionary.ui.home.HomeScreen
 import com.example.mydictionary.ui.quiz.GameScreen
 import com.example.mydictionary.ui.quiz.QuizDestination
+import com.example.mydictionary.ui.wordlist.ExcelWordListScreen
+import com.example.mydictionary.ui.wordlist.ExcelWordsScreenDestination
+import com.example.mydictionary.ui.wordlist.LeitnerBoxScreenDestination
+import com.example.mydictionary.ui.wordlist.LeitnerScreen
+import com.example.mydictionary.ui.wordlist.WordCategoryListScreen
+import com.example.mydictionary.ui.wordlist.WordListCategoryScreenDestinatin
 import com.example.mydictionary.ui.wordlist.WordListDestination
 import com.example.mydictionary.ui.wordlist.WordListScreen
 
@@ -29,7 +35,7 @@ fun DictionaryNavHostApp(
         composable(HomeDestination.route) {
             HomeScreen(
                 onAddWordClicked = { navController.navigate(AddWordDestination.route) },
-                onWordListClicked = { navController.navigate(WordListDestination.route) },
+                onWordListClicked = { navController.navigate(WordListCategoryScreenDestinatin.route) },
                 onQuizClicked = { navController.navigate(QuizDestination.route) }
             )
         }
@@ -41,13 +47,34 @@ fun DictionaryNavHostApp(
             )
         }
 
-        composable(WordListDestination.route) {
+        composable(WordListCategoryScreenDestinatin.route) {
+            WordCategoryListScreen(
+                onLightnerBox = {navController.navigate(LeitnerBoxScreenDestination.route)},
+                onAllWord = {navController.navigate(WordListDestination.route)} ,
+                onExcelWord = {navController.navigate(ExcelWordsScreenDestination.route)} ,
+                onNavigateBack = {navController.popBackStack()}
+            )
+        }
+        composable(LeitnerBoxScreenDestination.route){
+            LeitnerScreen(navigateBack = {navController.popBackStack(
+                WordListCategoryScreenDestinatin.route , inclusive = false)},
+                leitnerBoxViewModel = viewModel(factory = AppViewModelProvider.Factory))
+        }
+        composable(WordListDestination.route){
             WordListScreen(
-                navigateToAddNewWord = { navController.navigate(AddWordDestination.route) },
-                wordUpdate = {} ,
-                navigateBack = {navController.popBackStack()} ,
-                viewModelList = viewModel(factory = AppViewModelProvider.Factory)
-
+                navigateToAddNewWord = {navController.navigate(AddWordDestination.route)},
+                navigateBack = {navController.popBackStack(
+                    WordListCategoryScreenDestinatin.route , inclusive = false)} ,
+                wordListViewModel = viewModel(factory = AppViewModelProvider.Factory) ,
+                wordUpdate = {}
+            )
+        }
+        composable(ExcelWordsScreenDestination.route){
+            ExcelWordListScreen(
+                wordsList = listOf(),
+                navigateBack = {navController.popBackStack(
+                    WordListCategoryScreenDestinatin.route , inclusive = false)} ,
+                navigateToExcel = {}
             )
         }
 

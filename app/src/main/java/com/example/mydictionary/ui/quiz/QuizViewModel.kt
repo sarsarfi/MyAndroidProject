@@ -14,11 +14,13 @@ import kotlinx.coroutines.launch
 
 data class QuizUiState(
     val currentWord: String = "",
-    var inputUserGuess: String = "",
-    val currentWordCount: Int = 1,
+    val inputUserGuess: String = "",
+    val currentWordCount: Int = 0,
     val score: Int = 0,
     val isGuess: Boolean = false,
-    val isGameOver: Boolean = false
+    val isGameOver: Boolean = false,
+    val isLoading: Boolean = true,
+    val message: String = ""
 )
 
 data class WordListUiState(val wordList: List<Word> = listOf())
@@ -26,64 +28,100 @@ data class WordListUiState(val wordList: List<Word> = listOf())
 private const val SCORE_QUIZ = 20
 private const val WORD_COUNT_QUIZ = 10
 
-class QuizViewModel(wordsRepository: WordsRepository) : ViewModel() {
-
+class QuizViewModel(private val wordsRepository: WordsRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(QuizUiState())
-    val uiState: StateFlow<QuizUiState> = _uiState.asStateFlow()
 
-    private var currentWord: String = ""
-    private val usedWords: MutableSet<String> = mutableSetOf()
+    val uiState : StateFlow<QuizUiState> = _uiState.asStateFlow()
 
-    val allWords: StateFlow<WordListUiState> = wordsRepository.getAllWordsDictionary()
-        .map { WordListUiState(it) }
+    private var currentWordObject : Word? = null
+
+    private val usedWords : MutableSet<String> = mutableSetOf()
+
+    private var availableWordsCount : Int = 0
+
+    val allWords : StateFlow<WordListUiState> = wordsRepository.getAllWordsDictionary()
+        .map { wordList ->
+            val filteredWords = wordList.filter { !it.isDeleted }
+            WordListUiState(filteredWords)
+        }
         .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            scope = viewModelScope ,
+            started = SharingStarted.WhileSubscribed(5_000L) ,
             initialValue = WordListUiState()
         )
 
     init {
-        // وقتی ViewModel ساخته می‌شود، کلمه اول را آماده کن
         viewModelScope.launch {
             allWords.collect { wordListState ->
-                if (wordListState.wordList.isNotEmpty() && currentWord.isEmpty()) {
+                availableWordsCount  = wordListState.wordList.size
+
+                if (wordListState.wordList.isNotEmpty() && usedWords.isEmpty()){
+                    _uiState.value = _uiState.value.copy(isLoading = true)
                     wordRandom()
+                }else if (usedWords.isNotEmpty()){
+                    refreshAvailableWords()
                 }
+            }
+        }
+    }
+
+    private fun refreshAvailableWords() {
+        val currentWords = allWords.value.wordList.map { it.english }
+        usedWords.removeAll { usedWord ->
+            !currentWords.contains(usedWord)
+        }
+
+        // اگر کلمه فعلی حذف شده، کلمه جدید انتخاب کن
+        currentWordObject?.let { current ->
+            if (!currentWords.contains(current.english)) {
+                wordRandom()
             }
         }
     }
 
     private fun wordRandom() {
         val words = allWords.value.wordList
+        availableWordsCount = words.size
+
         if (words.isEmpty()) {
             _uiState.value = _uiState.value.copy(
                 currentWord = "No words available",
-                inputUserGuess = ""
+                inputUserGuess = "",
+                message = "Please add some words to wordlist!!"
             )
             return
         }
 
-        // اگر همه کلمات استفاده شدند، مجموعه را پاک کن
-        if (usedWords.size >= words.size) {
-            usedWords.clear()
-        }
-
-        // کلمه تصادفی که قبلاً استفاده نشده باشد
-        val availableWords = words.map { it.english }.filter { !usedWords.contains(it) }
-        if (availableWords.isEmpty()) {
-            usedWords.clear()
-            wordRandom()
+        if (usedWords.size >= availableWordsCount || usedWords.size >= WORD_COUNT_QUIZ) {
+            _uiState.value = _uiState.value.copy(
+                isGameOver = true,
+                message = "Game completed! Score: ${_uiState.value.score}"
+            )
             return
         }
 
-        val wordToUse = availableWords.random()
-        usedWords.add(wordToUse)
-        currentWord = wordToUse
+        val availableWords = words.filter {
+            !usedWords.contains(it.english) && !it.isDeleted
+        }
+
+        if (availableWords.isEmpty()) {
+            _uiState.value = _uiState.value.copy(
+                isGameOver = true,
+                message = "No more words available"
+            )
+            return
+        }
+
+        val wordToUseObject = availableWords.random()
+        usedWords.add(wordToUseObject.english)
+        currentWordObject = wordToUseObject
 
         _uiState.value = _uiState.value.copy(
-            currentWord = shuffleWord(currentWord),
+            currentWord = shuffleWord(wordToUseObject.english),
             currentWordCount = usedWords.size,
-            inputUserGuess = ""
+            inputUserGuess = "",
+            isGuess = false,
+//            message = "Word ${usedWords.size} of $WORD_COUNT_QUIZ"
         )
     }
 
@@ -98,13 +136,22 @@ class QuizViewModel(wordsRepository: WordsRepository) : ViewModel() {
         return String(chars)
     }
 
-    // بقیه متدها بدون تغییر...
     fun userGuess(input: String) {
         _uiState.value = _uiState.value.copy(inputUserGuess = input)
     }
 
     fun checkGuessUser(): Boolean {
-        return if (_uiState.value.inputUserGuess.equals(currentWord, ignoreCase = true)) {
+        val userInput = _uiState.value.inputUserGuess.trim()
+        val correctWord = currentWordObject?.english ?: ""
+
+        if (userInput.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                message = "Please enter your guess"
+            )
+            return false
+        }
+
+        return if (userInput.equals(correctWord, ignoreCase = true)) {
             submit()
             true
         } else {
@@ -114,31 +161,81 @@ class QuizViewModel(wordsRepository: WordsRepository) : ViewModel() {
     }
 
     fun submit() {
+        currentWordObject?.let { word ->
+            viewModelScope.launch {
+                // اگر کلمه قبلاً اسکیپ شده بود، از حالت اسکیپ خارجش کن
+                if (word.isSkipped) {
+                    wordsRepository.updateSkipStatus(word.id, false)
+                }
+            }
+        }
+
         val updateScore = _uiState.value.score + SCORE_QUIZ
+
         if (usedWords.size >= WORD_COUNT_QUIZ) {
             _uiState.value = _uiState.value.copy(
                 score = updateScore,
-                isGameOver = true
+                isGameOver = true,
+                isGuess = true,
+                message = "Congratulations! Final score: $updateScore"
             )
         } else {
             wordRandom()
             _uiState.value = _uiState.value.copy(
                 score = updateScore,
                 isGuess = true,
-                inputUserGuess = ""
+                inputUserGuess = "",
+                message = "Correct! +$SCORE_QUIZ points"
             )
         }
     }
 
     fun skip() {
+        currentWordObject?.let { word ->
+            viewModelScope.launch {
+                // ✅ اصلاح: فقط وضعیت اسکیپ را آپدیت کن
+                wordsRepository.updateSkipStatus(word.id, true)
+
+                // ✅ همچنین کلمه را به جعبه اول لایتنر برگردان
+                wordsRepository.updateLeitnerBox(word.id, 1)
+                wordsRepository.updateNextReviewDate(word.id, System.currentTimeMillis())
+            }
+        }
+
         if (usedWords.size >= WORD_COUNT_QUIZ) {
-            _uiState.value = _uiState.value.copy(isGameOver = true)
+            _uiState.value = _uiState.value.copy(
+                isGameOver = true,
+                message = "Game over! Final score: ${_uiState.value.score}"
+            )
         } else {
             wordRandom()
             _uiState.value = _uiState.value.copy(
                 isGuess = false,
-                inputUserGuess = ""
+                inputUserGuess = "",
+                message = "Word skipped - will be reviewed in Leitner box"
             )
+        }
+    }
+
+    fun restartGame() {
+        usedWords.clear()
+        currentWordObject = null
+        _uiState.value = QuizUiState(isLoading = true)
+
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(300) // کمی تاخیر برای لود مجدد داده‌ها
+
+            val words = allWords.value.wordList
+            if (words.isNotEmpty()) {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                wordRandom()
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    currentWord = "No words available",
+                    message = "Please add some words first"
+                )
+            }
         }
     }
 }

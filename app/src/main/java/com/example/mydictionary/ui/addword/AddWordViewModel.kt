@@ -63,13 +63,9 @@ class AddWordViewModel(
         if (!currentState.isValid) return
 
         viewModelScope.launch {
-            try {
                 wordsRepository.insertWord(currentState.addWordDetails.toWord())
                 resetForm()
                 onSuccess()
-            } catch (e: Exception) {
-
-            }
         }
     }
     private fun resetForm() {

@@ -1,4 +1,4 @@
-package com.example.mydictionary.ui.home
+package com.example.mydictionary.ui.wordlist
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -33,72 +32,65 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mydictionary.DictionaryTopAppBar
 import com.example.mydictionary.R
+import com.example.mydictionary.ui.home.HomeDestination
+import com.example.mydictionary.ui.home.MenuCard
 import com.example.mydictionary.ui.navigation.NavigationDestination
 import com.example.mydictionary.ui.theme.MyDictionaryTheme
 
-object HomeDestination : NavigationDestination{
+object WordListCategoryScreenDestinatin : NavigationDestination{
 
-    override val route = "home"
+    override val route: String = " WordListCategoryScreen"
 
-    override val titleRes = R.string.app_name
-
+    override val titleRes: Int = R.string.categorize_words
 }
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
-    onAddWordClicked: () -> Unit,
-    onWordListClicked: () -> Unit,
-    onQuizClicked: () -> Unit,
-    modifier: Modifier = Modifier
+fun WordCategoryListScreen(
+    onLightnerBox: () -> Unit,
+    onAllWord: () -> Unit,
+    onExcelWord: () -> Unit,
+    modifier: Modifier = Modifier ,
+    onNavigateBack : () -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     MyDictionaryTheme {
         Scaffold(
             modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection), topBar = {
                 DictionaryTopAppBar(
-                    title = stringResource(HomeDestination.titleRes),
-                    canNavigateBack = false,
-                    scrollBehavior = scrollBehavior
+                    title = stringResource(WordListCategoryScreenDestinatin.titleRes),
+                    canNavigateBack = true,
+                    scrollBehavior = scrollBehavior ,
+                    navigateUp = onNavigateBack
                 )
             }
         ) { innerPading ->
             val cardData = listOf(
                 Triple(
-                    R.string.add_newword,
-                    R.string.description_start_screen,
-                    R.drawable.add_24dp_1f1f1f_fill0_wght400_grad0_opsz24
+                    R.string.leitner_box,
+                    R.string.description_leitner_box,
+                    R.drawable.box
                 ),
                 Triple(
-                    R.string.list_of_words,
-                    R.string.list_of_words,
-                    R.drawable.list_24dp_1f1f1f_fill0_wght400_grad0_opsz24
+                    R.string.list_of_all_words,
+                    R.string.description_all_words,
+                    R.drawable.list
                 ),
                 Triple(
-                    R.string.quiz,
-                    R.string.description_quiz,
-                    R.drawable.quiz_24dp_1f1f1f_fill0_wght400_grad0_opsz24
+                    R.string.list_words_excel,
+                    R.string.description_excel_words,
+                    R.drawable.excel
                 )
             )
-
-            val imageResources = listOf(
-                R.drawable._850917,
-                R.drawable._081047,
-                R.drawable._3128_ojm4kv_79
-            )
-
             // تعریف توابع کلیک به ترتیب
             val clickActions = listOf(
-                onAddWordClicked,
-                onWordListClicked,
-                onQuizClicked
+                onLightnerBox,
+                onAllWord,
+                onExcelWord
             )
 
             Column(
@@ -122,8 +114,7 @@ fun HomeScreen(
                         MenuCard(
                             title = cardData[index].first,       // title
                             description = cardData[index].second,    // description
-                            iconImage = cardData[index].third,       // iconImage
-                            image = imageResources[index],           // image
+                            image = cardData[index].third,       // iconImage
                             onClick = clickActions[index],           // onClick
                             modifier = Modifier.fillMaxWidth()
                                 .padding(innerPading)
@@ -134,11 +125,12 @@ fun HomeScreen(
         }
     }
 }
+
+
 @Composable
 fun MenuCard(
     @StringRes title: Int,
     @StringRes description: Int,
-    @DrawableRes iconImage : Int,
     onClick:() -> Unit,
     @DrawableRes image : Int ,
     modifier: Modifier = Modifier
@@ -161,7 +153,7 @@ fun MenuCard(
             Image(
                 painter = painterResource(image),
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.None,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(194.dp)
@@ -197,14 +189,6 @@ fun MenuCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Icon(
-                        painter = painterResource(iconImage) ,
-                        contentDescription = stringResource(title),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
                 }
             }
         }
@@ -212,12 +196,8 @@ fun MenuCard(
 }
 @Preview(showBackground = true)
 @Composable
-fun StartScreenPreview() {
-    MaterialTheme {
-        HomeScreen(
-            onAddWordClicked = {},
-            onWordListClicked = {},
-            onQuizClicked = {}
-        )
+fun WordCategoryListPreview(){
+    MyDictionaryTheme {
+        WordCategoryListScreen(onLightnerBox = {} , onAllWord = {} , onExcelWord = {} , onNavigateBack = {})
     }
 }

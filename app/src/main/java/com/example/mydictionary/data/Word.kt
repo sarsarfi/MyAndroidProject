@@ -4,10 +4,14 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "word")
-class Word(
+data class Word(
    @PrimaryKey(autoGenerate = true)
-   val id : Long = 0L   ,
+   val id : Int = 0  ,
    val english: String,
    val persian: String ,
-   val dateAdded: Long = System.currentTimeMillis()
+   val isSkipped: Boolean = false ,
+   val isDeleted : Boolean = false ,
+   val dateAdded: Long = System.currentTimeMillis() ,
+   val leitnerBox : Int = 1 ,
+   val nextReviewDate : Long = System.currentTimeMillis()
 )

@@ -14,4 +14,14 @@ interface WordsRepository {
 
     suspend fun deleteWord(word: Word)
 
+    fun getAllSkippedWords() : Flow<List<Word>>
+
+    suspend fun updateLeitnerBox(wordId: Int, newLeitnerBox: Int)
+
+    suspend fun updateNextReviewDate(wordId: Int , nextReviewDate : Long)
+
+    fun getAllWordForReview(currentTime : Long) : Flow<List<Word>>
+
+    suspend fun updateSkipStatus(wordId: Int, isSkipped: Boolean)
+
 }

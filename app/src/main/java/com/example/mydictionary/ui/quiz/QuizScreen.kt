@@ -51,7 +51,7 @@ import com.example.mydictionary.ui.theme.MyDictionaryTheme
 
 object QuizDestination : NavigationDestination{
     override val route = "quiz"
-    override val titleRes = R.string.quize
+    override val titleRes = R.string.quiz
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,6 +63,22 @@ fun GameScreen(modifier: Modifier = Modifier,
     val mediumPadding = dimensionResource(R.dimen.padding_medium)
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val quizUiState by quizViewModel.uiState.collectAsState()
+
+
+    if (quizUiState.message.contains("No words available")) {
+        AlertDialog(
+            onDismissRequest = { navigateBack() },
+            title = { Text(text = stringResource(R.string.no_words_title)) },
+            text = { Text(text = stringResource(R.string.no_words_body)) },
+            confirmButton = {
+                TextButton(onClick = navigateBack) {
+                    Text(text = stringResource(R.string.back))
+                }
+            }
+        )
+        return
+    }
+
     MyDictionaryTheme {
         Scaffold(
             topBar = {
@@ -92,6 +108,13 @@ fun GameScreen(modifier: Modifier = Modifier,
                         .wrapContentHeight()
                         .padding(mediumPadding)
                 )
+                // 👇 نمایش پیام وضعیت در بالای دکمه‌ها (Correct/Skipped/Error)
+                Text(
+                    text = quizUiState.message,
+                    color = if (quizUiState.isGuess) colorScheme.primary else colorScheme.onSurface,
+                    style = typography.bodyLarge,
+                    modifier = Modifier.padding(bottom = mediumPadding)
+                )
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -102,7 +125,7 @@ fun GameScreen(modifier: Modifier = Modifier,
 
                     Button(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = {quizViewModel.submit()} ,
+                        onClick = {quizViewModel.checkGuessUser()} ,
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
@@ -124,6 +147,16 @@ fun GameScreen(modifier: Modifier = Modifier,
                 }
 
                 GameStatus(score = quizUiState.score, modifier = Modifier.padding(20.dp))
+            }
+            if (quizUiState.isGameOver){
+                MyDictionaryTheme {
+                    FinalScoreDialog(
+                        score = quizUiState.score,
+                        onPlayAgain = { quizViewModel.restartGame() },
+                        onExist = { navigateBack() }
+
+                    )
+                }
             }
         }
     }
@@ -191,7 +224,7 @@ fun GameLayout(modifier: Modifier = Modifier,
                 ),
                 onValueChange = {onValueChange(it)},
                 label = { Text(stringResource(R.string.enter_your_word)) },
-                isError = false,
+                isError = true,
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Done
                 ),
@@ -210,6 +243,7 @@ fun GameLayout(modifier: Modifier = Modifier,
 private fun FinalScoreDialog(
     score: Int,
     onPlayAgain: () -> Unit,
+    onExist : () -> Unit ,
     modifier: Modifier = Modifier
 ) {
 
@@ -224,13 +258,13 @@ private fun FinalScoreDialog(
         modifier = modifier,
         dismissButton = {
             TextButton(
-                onClick = {}
+                onClick = {onExist()}
             ) {
                 Text(text = stringResource(R.string.exit))
             }
         },
         confirmButton = {
-            TextButton(onClick = {  }) {
+            TextButton(onClick = {onPlayAgain()}) {
                 Text(text = stringResource(R.string.play_again))
             }
         }

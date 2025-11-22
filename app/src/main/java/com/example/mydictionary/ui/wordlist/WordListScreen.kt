@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -38,6 +40,7 @@ import com.example.mydictionary.data.Word
 import com.example.mydictionary.data.WordsRepository
 import com.example.mydictionary.ui.AppViewModelProvider
 import com.example.mydictionary.ui.navigation.NavigationDestination
+import com.example.mydictionary.ui.quiz.QuizViewModel
 import com.example.mydictionary.ui.theme.MyDictionaryTheme
 import java.util.Dictionary
 
@@ -54,9 +57,10 @@ fun WordListScreen(
     wordUpdate : (Int) -> Unit,
     navigateBack : () -> Unit,
     modifier : Modifier = Modifier,
-    viewModelList: WordViewModelList = viewModel(factory = AppViewModelProvider.Factory)
-) {
-    val listUiState by viewModelList.uiState.collectAsState()
+    wordListViewModel: WordListViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    ) {
+    val listUiState by wordListViewModel.uiState.collectAsState()
+
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     MyDictionaryTheme {
         Scaffold(
@@ -83,9 +87,11 @@ fun WordListScreen(
             }
         ) { innerPadding ->
             WordListBody(
-                wordsList = listUiState.wordList,
+                wordsList = listUiState.wordsList,
+                skippedWordsList = listUiState.skippedWords ,
                 onWordClick = wordUpdate,
                 contentPading = innerPadding,
+                onDelete = {wordListViewModel.deleteWord(it)},
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -94,9 +100,11 @@ fun WordListScreen(
 
 @Composable
 private fun WordListBody(
-    wordsList: List<Word> ,
-    onWordClick: (Int) -> Unit ,
-    modifier: Modifier = Modifier ,
+    wordsList: List<Word>,
+    onWordClick: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    skippedWordsList : List<Word>,
+    onDelete : (Word) -> Unit ,
     contentPading: PaddingValues = PaddingValues(0.dp)
 ){
     Column(
@@ -115,35 +123,120 @@ private fun WordListBody(
                 wordsList = wordsList,
                 onWordClick = onWordClick,
                 contentPadding = contentPading,
+                skippedWords = skippedWordsList ,
+                onDelete = {onDelete(it)},
                 modifier = modifier
             )
     }
 }
 @Composable
 private fun ListWords(
-    wordsList: List<Word> ,
-    onWordClick : (Int) -> Unit ,
-    contentPadding : PaddingValues ,
+    wordsList: List<Word>,
+    onWordClick: (Int) -> Unit,
+    contentPadding: PaddingValues,
+    skippedWords: List<Word>,
+    onDelete : (Word) -> Unit ,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = contentPadding
+    ) {
+        if (skippedWords.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Skipped Words",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+            items(items = skippedWords) { item ->
+                SkippedWordItem(
+                    word = item,
+                    //onDelete ={onDelete(item)} ,
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .clickable { onWordClick } // ✅ اینجا هم تابع باید فراخوانی شود!
+                )
+            }
+        }
+        item {
+            Text(
+                text = "The rest of the words in the list",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
+        // اول نمایش کلمات معمولی
+        items(items = wordsList) { item ->
+            DictionaryWord(
+                word = item,
+                onDelete = {onDelete(item)},
+                modifier = Modifier
+                    .padding(4.dp)
+                    .clickable { onWordClick } // ✅ اینجا باید تابع فراخوانی شود!
+            )
+        }
+    }
+}
+
+
+// یک کامپوزبل جدید در انتهای فایل WordListScreen.kt اضافه کنید
+@Composable
+private fun SkippedWordItem(
+    word: Word,
+    //onDelete: (Word) -> Unit ,
     modifier: Modifier = Modifier
 ){
-    LazyColumn(
-        modifier = modifier ,
-        contentPadding = contentPadding
-    ) { items(items = wordsList ){ item ->
-        DictionaryWord(
-            word = item ,
-            modifier = Modifier.padding(8.dp)
-                  .clickable{onWordClick}
-        )
-
-    }
-
+    Card(
+        modifier = modifier.fillMaxWidth() ,
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp) ,
+        // رنگ متفاوتی برای تأکید بر کلمات "مشکل دار"
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 20.dp, vertical = 10.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = word.english ,
+                style = MaterialTheme.typography.titleLarge ,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Text(
+                text = word.persian ,
+                style = MaterialTheme.typography.titleMedium ,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Row() {
+//                IconButton(onClick = {onDelete(word)}) {
+//                    Icon(
+//                        imageVector = Icons.Filled.Delete,
+//                        contentDescription = null,
+//                        tint = MaterialTheme.colorScheme.onErrorContainer
+//                    )
+//                }
+                // آیکون هشدار یا راهنما
+                IconButton(onClick = {}) {
+                    Icon(
+                        imageVector = Icons.Filled.Warning, // استفاده از آیکون پیش‌فرض Warning
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
 private fun DictionaryWord(
     word: Word ,
+    onDelete : (Word) -> Unit ,
     modifier: Modifier = Modifier
 ){
     Card(
@@ -153,18 +246,29 @@ private fun DictionaryWord(
     ) {
         Row(
             modifier = Modifier
-                .padding(20.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp)
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = word.english ,
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleLarge ,
+                modifier = Modifier.weight(1f)
             )
-            Text(
-                text = word.persian ,
-                style = MaterialTheme.typography.titleMedium
-            )
+                Text(
+                    text = word.persian,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = {onDelete(word)}
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete ,
+                        contentDescription = null
+                    )
+                }
         }
     }
 }
@@ -173,7 +277,7 @@ private fun DictionaryWord(
 @Composable
 fun OneWordDictionaryPreview(){
     MyDictionaryTheme {
-        DictionaryWord(Word(english = "Apple" , persian = "سیب") )
+        DictionaryWord(Word(english = "Apple" , persian = "سیب") , onDelete = {} )
     }
 }
 
@@ -185,7 +289,12 @@ fun WordListBodyPreview(){
             Word(english = "Apple" , persian = "سیب"),
             Word(english = "Cat" , persian = "گربه") ,
             Word(english = "Red" , persian = "قرمز")),
-            onWordClick = {}
+            onWordClick = {} ,
+            skippedWordsList = listOf(
+                Word(english = "ball" , persian = "توپ"),
+                Word(english = "Cat" , persian = "گربه")
+            ) ,
+            onDelete = {}
         )
     }
 }
@@ -195,7 +304,11 @@ fun WordListBodyPreview(){
 @Composable
 fun WordListPreview(){
     MyDictionaryTheme {
-        WordListScreen(navigateToAddNewWord = {} , wordUpdate = {} , navigateBack = {} , viewModelList = viewModel() )
+        WordListScreen(navigateToAddNewWord = {} ,
+            wordUpdate = {} ,
+            navigateBack = {} ,
+            wordListViewModel = viewModel()
+            )
 
     }
 }
