@@ -37,7 +37,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mydictionary.DictionaryTopAppBar
 import com.example.mydictionary.R
 import com.example.mydictionary.data.Word
-import com.example.mydictionary.data.WordsRepository
 import com.example.mydictionary.ui.AppViewModelProvider
 import com.example.mydictionary.ui.navigation.NavigationDestination
 import com.example.mydictionary.ui.quiz.QuizViewModel

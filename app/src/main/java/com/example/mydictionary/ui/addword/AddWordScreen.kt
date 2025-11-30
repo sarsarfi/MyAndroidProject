@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,6 +21,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -93,9 +96,7 @@ private fun WordEntryBody(
             enabled = addWordUiState.isValid,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                disabledContainerColor = MaterialTheme.colorScheme.surface,
-                disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.small
@@ -117,7 +118,26 @@ private fun WordInputForm(
     ) {
         OutlinedTextField(
             value = wordDetails.englishWord,
-            onValueChange = { onValueChange(wordDetails.copy(englishWord = it)) },
+            onValueChange = { newValue ->
+                // 1. فیلتر کردن: فقط حروف انگلیسی را مجاز می‌کند
+                val filteredValue = newValue.filter { it.isLetter() }
+
+                // 2. منطق تبدیل: حرف اول بزرگ، بقیه کوچک
+                val capitalizedValue = if (filteredValue.isNotEmpty()) {
+                    // حرف اول را بزرگ می‌کند (Book -> B)
+                    filteredValue.substring(0, 1).uppercase() +
+                            // بقیه حروف را کوچک می‌کند (ook)
+                            filteredValue.substring(1).lowercase()
+                } else {
+                    filteredValue
+                }
+
+                onValueChange(wordDetails.copy(englishWord = capitalizedValue))
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                capitalization = KeyboardCapitalization.Words
+            ),
             label = { Text(stringResource(R.string.enter_your_word)) },
             singleLine = true,
             shape = MaterialTheme.shapes.small,
@@ -141,6 +161,9 @@ private fun WordInputForm(
                 unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                 disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                 errorContainerColor = MaterialTheme.colorScheme.errorContainer
+            ),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text
             ),
             modifier = Modifier.fillMaxWidth()
         )

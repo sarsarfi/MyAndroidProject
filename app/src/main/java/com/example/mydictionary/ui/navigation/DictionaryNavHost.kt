@@ -71,7 +71,7 @@ fun DictionaryNavHostApp(
         }
         composable(ExcelWordsScreenDestination.route){
             ExcelWordListScreen(
-                wordsList = listOf(),
+                excelWordsViewModel = viewModel(factory = AppViewModelProvider.Factory),
                 navigateBack = {navController.popBackStack(
                     WordListCategoryScreenDestinatin.route , inclusive = false)} ,
                 navigateToExcel = {}

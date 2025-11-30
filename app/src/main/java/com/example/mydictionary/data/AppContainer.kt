@@ -1,5 +1,6 @@
 package com.example.mydictionary.data
 
+import WordsRepository
 import android.content.Context
 
 interface AppContainer {

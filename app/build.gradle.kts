@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.mydictionary"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -63,6 +63,11 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+
+    implementation("org.apache.poi:poi:5.2.3")
+    implementation("org.apache.poi:poi-ooxml:5.2.3")
+    implementation("org.apache.xmlbeans:xmlbeans:5.1.1")
+    implementation("commons-codec:commons-codec:1.16.0")
 
     // Test
     testImplementation(libs.junit)
