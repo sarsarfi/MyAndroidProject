@@ -1,5 +1,7 @@
 package com.example.mydictionary.ui.wordlist
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +44,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
@@ -132,6 +135,7 @@ private fun CartLayout(
     isMeaningVisible: Boolean,
     modifier: Modifier = Modifier
 ){
+    val context = LocalContext.current
     Card(
         modifier = modifier
             .fillMaxWidth(0.9f)  // ✅ 90% عرض صفحه
@@ -157,6 +161,11 @@ private fun CartLayout(
                     modifier = Modifier
                         .size(48.dp)
                         .padding(top = 16.dp, start = 16.dp)
+                        .clickable {
+                            val url = "https://www.google.com/search?tbm=isch&q=${word.english}"
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            context.startActivity(intent)
+                        }
                 )
             }
             Spacer(modifier = Modifier.height(74.dp))
@@ -250,6 +259,7 @@ private fun CartLayoutReview(
     isMeaningVisible: Boolean,
     modifier: Modifier = Modifier
 ){
+    val  context = LocalContext.current
     Card(
         modifier = modifier
             .fillMaxWidth(0.9f)
@@ -275,7 +285,11 @@ private fun CartLayoutReview(
                     modifier = Modifier
                         .size(48.dp)
                         .padding(top = 16.dp, start = 16.dp)
-                        .clickable{/*search image in net*/}
+                        .clickable{
+                            val url = "https://www.google.com/search?tbm=isch&q=${word.english}"
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            context.startActivity(intent)
+                        }
                 )
                 Icon(
                     imageVector = Icons.Outlined.Warning,
