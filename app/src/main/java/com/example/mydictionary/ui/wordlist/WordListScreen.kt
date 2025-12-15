@@ -2,33 +2,32 @@ package com.example.mydictionary.ui.wordlist
 
 
 
-import androidx.compose.foundation.Image
+import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,9 +38,9 @@ import com.example.mydictionary.R
 import com.example.mydictionary.data.Word
 import com.example.mydictionary.ui.AppViewModelProvider
 import com.example.mydictionary.ui.navigation.NavigationDestination
-import com.example.mydictionary.ui.quiz.QuizViewModel
 import com.example.mydictionary.ui.theme.MyDictionaryTheme
-import java.util.Dictionary
+import com.example.mydictionary.ui.wordlist.DictionaryWord
+import com.example.mydictionary.ui.wordlist.WordListBody
 
 object WordListDestination : NavigationDestination{
     override val route = "wordlist"
@@ -60,7 +59,15 @@ fun WordListScreen(
     ) {
     val listUiState by wordListViewModel.uiState.collectAsState()
 
+
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+    val context = LocalContext.current
+
+    // ✅ 2. فراخوانی initializeTts فقط یک بار هنگام ورود به صفحه
+    LaunchedEffect(Unit) {
+        wordListViewModel.initializeTts(context)
+    }
     MyDictionaryTheme {
         Scaffold(
             modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -88,22 +95,24 @@ fun WordListScreen(
             WordListBody(
                 wordsList = listUiState.wordsList,
                 skippedWordsList = listUiState.skippedWords ,
-                onWordClick = wordUpdate,
+                /*onWordClick = wordUpdate,*/
                 contentPading = innerPadding,
-                onDelete = {wordListViewModel.deleteWord(it)},
-                modifier = Modifier.fillMaxSize()
+                onDelete = {currentWord : Word -> wordListViewModel.deleteWord(currentWord)},
+                onSpeakWord = { currentWord: Word -> wordListViewModel.speakWord(currentWord.english) },                modifier = Modifier.fillMaxSize()
             )
         }
     }
 }
 
+
 @Composable
-private fun WordListBody(
+fun WordListBody(
     wordsList: List<Word>,
-    onWordClick: (Int) -> Unit,
+    //onWordClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
     skippedWordsList : List<Word>,
-    onDelete : (Word) -> Unit ,
+    onDelete : (Word) -> Unit,
+    onSpeakWord: (Word) -> Unit,
     contentPading: PaddingValues = PaddingValues(0.dp)
 ){
     Column(
@@ -120,10 +129,11 @@ private fun WordListBody(
         } else
             ListWords(
                 wordsList = wordsList,
-                onWordClick = onWordClick,
+                //onWordClick = onWordClick,
                 contentPadding = contentPading,
                 skippedWords = skippedWordsList ,
-                onDelete = {onDelete(it)},
+                onDelete = onDelete,
+                onSpeakWord = onSpeakWord,
                 modifier = modifier
             )
     }
@@ -131,10 +141,11 @@ private fun WordListBody(
 @Composable
 private fun ListWords(
     wordsList: List<Word>,
-    onWordClick: (Int) -> Unit,
+    //onWordClick: (Int) -> Unit,
     contentPadding: PaddingValues,
     skippedWords: List<Word>,
-    onDelete : (Word) -> Unit ,
+    onDelete : (Word) -> Unit,
+    onSpeakWord: (Word) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -152,10 +163,10 @@ private fun ListWords(
             items(items = skippedWords) { item ->
                 SkippedWordItem(
                     word = item,
-                    //onDelete ={onDelete(item)} ,
+                    onSpeakWord = {onSpeakWord(item)},
                     modifier = Modifier
                         .padding(4.dp)
-                        .clickable { onWordClick } // ✅ اینجا هم تابع باید فراخوانی شود!
+                        .clickable { /*onWordClick*/ } // ✅ اینجا هم تابع باید فراخوانی شود!
                 )
             }
         }
@@ -171,9 +182,10 @@ private fun ListWords(
             DictionaryWord(
                 word = item,
                 onDelete = {onDelete(item)},
+                onSpeakWord = {onSpeakWord(item)},
                 modifier = Modifier
                     .padding(4.dp)
-                    .clickable { onWordClick } // ✅ اینجا باید تابع فراخوانی شود!
+                    .clickable { /*onWordClick*/ } // ✅ اینجا باید تابع فراخوانی شود!
             )
         }
     }
@@ -184,13 +196,12 @@ private fun ListWords(
 @Composable
 private fun SkippedWordItem(
     word: Word,
-    //onDelete: (Word) -> Unit ,
+    onSpeakWord: (Word) -> Unit,
     modifier: Modifier = Modifier
 ){
     Card(
         modifier = modifier.fillMaxWidth() ,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp) ,
-        // رنگ متفاوتی برای تأکید بر کلمات "مشکل دار"
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
         shape = MaterialTheme.shapes.small
     ) {
@@ -201,11 +212,23 @@ private fun SkippedWordItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = word.english ,
-                style = MaterialTheme.typography.titleLarge ,
-                color = MaterialTheme.colorScheme.onErrorContainer
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = word.english,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Icon(
+                    imageVector = Icons.Outlined.VolumeUp,
+                    contentDescription = "Pronounce word",
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable {onSpeakWord(word)}
+                        .alignByBaseline()
+                )
+            }
             Text(
                 text = word.persian ,
                 style = MaterialTheme.typography.titleMedium ,
@@ -234,8 +257,9 @@ private fun SkippedWordItem(
 
 @Composable
 private fun DictionaryWord(
-    word: Word ,
-    onDelete : (Word) -> Unit ,
+    word: Word,
+    onDelete : (Word) -> Unit,
+    onSpeakWord : (Word) -> Unit,
     modifier: Modifier = Modifier
 ){
     Card(
@@ -250,14 +274,26 @@ private fun DictionaryWord(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = word.english ,
-                style = MaterialTheme.typography.titleLarge ,
-                modifier = Modifier.weight(1f)
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ){
+                Text(
+                    text = word.english,
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Icon(
+                    imageVector = Icons.Outlined.VolumeUp,
+                    contentDescription = "Pronounce word",
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable {onSpeakWord(word)}
+                        .alignByBaseline()
+                )
+            }
                 Text(
                     text = word.persian,
                     style = MaterialTheme.typography.titleMedium,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f)
                 )
                 IconButton(
@@ -276,7 +312,10 @@ private fun DictionaryWord(
 @Composable
 fun OneWordDictionaryPreview(){
     MyDictionaryTheme {
-        DictionaryWord(Word(english = "Apple" , persian = "سیب") , onDelete = {} )
+        DictionaryWord(Word(english = "Apple" , persian = "سیب") ,
+            onDelete = {} ,
+            onSpeakWord = {}
+        )
     }
 }
 
@@ -288,7 +327,8 @@ fun WordListBodyPreview(){
             Word(english = "Apple" , persian = "سیب"),
             Word(english = "Cat" , persian = "گربه") ,
             Word(english = "Red" , persian = "قرمز")),
-            onWordClick = {} ,
+            /*onWordClick = {}*/
+            onSpeakWord = {},
             skippedWordsList = listOf(
                 Word(english = "ball" , persian = "توپ"),
                 Word(english = "Cat" , persian = "گربه")

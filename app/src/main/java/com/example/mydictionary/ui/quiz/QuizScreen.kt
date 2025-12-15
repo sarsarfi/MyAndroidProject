@@ -2,22 +2,27 @@ package com.example.mydictionary.ui.quiz
 
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
@@ -30,11 +35,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -63,6 +70,13 @@ fun GameScreen(modifier: Modifier = Modifier,
     val mediumPadding = dimensionResource(R.dimen.padding_medium)
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val quizUiState by quizViewModel.uiState.collectAsState()
+
+    val context = LocalContext.current
+
+    // ✅ 2. فراخوانی initializeTts فقط یک بار هنگام ورود به صفحه
+    LaunchedEffect(Unit) {
+        quizViewModel.initializeTts(context)
+    }
 
 
     if (quizUiState.message.contains("No words available")) {
@@ -103,6 +117,7 @@ fun GameScreen(modifier: Modifier = Modifier,
                     quizUiState =quizUiState ,
                     onDone = {quizViewModel.checkGuessUser()},
                     onValueChange = {quizViewModel.userGuess(it)},
+                    onSpeakWord = {quizViewModel.speakCurrentCorrectWord()},
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentHeight()
@@ -179,6 +194,7 @@ fun GameStatus(score: Int, modifier: Modifier = Modifier) {
 fun GameLayout(modifier: Modifier = Modifier,
                quizUiState: QuizUiState,
                onValueChange : (String) -> Unit,
+               onSpeakWord : () -> Unit ,
                onDone : () -> Unit
 ){
     val mediumPadding = dimensionResource(R.dimen.padding_medium)
@@ -206,6 +222,14 @@ fun GameLayout(modifier: Modifier = Modifier,
             Text(
                 text = quizUiState.currentWord,
                 style = typography.displayMedium
+            )
+            Icon(
+                imageVector = Icons.Filled.VolumeUp,
+                contentDescription = null,
+                tint = if (quizUiState.isGuess) colorScheme.primary else colorScheme.onSurface ,
+                modifier = Modifier
+                    .clickable{onSpeakWord()}
+                    .size(32.dp)
             )
             Text(
                 text = stringResource(R.string.instructions),

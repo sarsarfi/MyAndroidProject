@@ -66,6 +66,13 @@ fun LeitnerScreen(
     val leitnerUiState by leitnerBoxViewModel.uiState.collectAsState()
     val currentWord = leitnerBoxViewModel.getNextWordToReview(leitnerUiState)
     val meaningWord by leitnerBoxViewModel.isMeaningVisible.collectAsState()
+    // ✅ 1. دریافت Context (برای راه‌اندازی TTS)
+    val context = LocalContext.current
+
+    // ✅ 2. فراخوانی initializeTts فقط یک بار هنگام ورود به صفحه
+    LaunchedEffect(Unit) {
+        leitnerBoxViewModel.initializeTts(context)
+    }
     LaunchedEffect (currentWord?.id){//وقتی id  کلمه تغییر کرد معنی ریست شود (isMeaning = false)
         leitnerBoxViewModel.resetMeaning()
     }
@@ -95,6 +102,7 @@ fun LeitnerScreen(
                             onDontKnow = { leitnerBoxViewModel.markWordAsForgotten(it) },
                             onClickToShowMeaning = {leitnerBoxViewModel.onClickToShowMeaning()},
                             isMeaningVisible = meaningWord,
+                            onSpeakWord = {leitnerBoxViewModel.speakWord(currentWord.english)},
                             modifier = Modifier.fillMaxWidth(0.9f)
                         )
                     } else {
@@ -104,6 +112,7 @@ fun LeitnerScreen(
                             onDontKnow = { leitnerBoxViewModel.markWordAsForgotten(it) },
                             onClickToShowMeaning = {leitnerBoxViewModel.onClickToShowMeaning()},
                             isMeaningVisible = meaningWord,
+                            onSpeakWord = {leitnerBoxViewModel.speakWord(currentWord.english)},
                             modifier = Modifier.fillMaxWidth(0.9f)
                         )
                     }
@@ -133,6 +142,7 @@ private fun CartLayout(
     onDontKnow : (Word) -> Unit,
     onClickToShowMeaning : () -> Unit,
     isMeaningVisible: Boolean,
+    onSpeakWord : () -> Unit ,
     modifier: Modifier = Modifier
 ){
     val context = LocalContext.current
@@ -188,7 +198,7 @@ private fun CartLayout(
                     contentDescription = "Pronounce word",
                     modifier = Modifier
                         .size(32.dp)
-                        .clickable { /* اجرای تابع پخش تلفظ */ }
+                        .clickable { onSpeakWord() }
                         .alignByBaseline()
                 )
             }
@@ -256,6 +266,7 @@ private fun CartLayoutReview(
     onKnow: (Word) -> Unit,
     onDontKnow: (Word) -> Unit,
     onClickToShowMeaning: () -> Unit,
+    onSpeakWord : () -> Unit ,
     isMeaningVisible: Boolean,
     modifier: Modifier = Modifier
 ){
@@ -321,7 +332,7 @@ private fun CartLayoutReview(
                     contentDescription = "Pronounce word",
                     modifier = Modifier
                         .size(32.dp)
-                        .clickable { /* اجرای تابع پخش تلفظ */ }
+                        .clickable { onSpeakWord() }
                         .alignByBaseline()
                 )
             }
@@ -392,6 +403,7 @@ fun CartLayoutReviewPreview(){
             onKnow = {},
             onDontKnow = {} ,
             onClickToShowMeaning = {} ,
+            onSpeakWord = {},
             isMeaningVisible = false
         )
     }
@@ -405,6 +417,7 @@ fun CartLayoutPreview() {
             onKnow = {},
             onDontKnow = {} ,
             onClickToShowMeaning = {} ,
+            onSpeakWord = {},
             isMeaningVisible = false
         )
     }

@@ -1,6 +1,7 @@
 package com.example.mydictionary.ui.quiz
 
 import WordsRepository
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mydictionary.data.Word
@@ -11,6 +12,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import android.speech.tts.TextToSpeech
+import android.speech.tts.TextToSpeech.OnInitListener
+import java.util.Locale
 
 data class QuizUiState(
     val currentWord: String = "",
@@ -28,7 +32,51 @@ data class WordListUiState(val wordList: List<Word> = listOf())
 private const val SCORE_QUIZ = 20
 private const val WORD_COUNT_QUIZ = 10
 
-class QuizViewModel(private val wordsRepository: WordsRepository) : ViewModel() {
+class QuizViewModel(private val wordsRepository: WordsRepository) : ViewModel() , OnInitListener {
+
+    // Add pronunciation logic
+    private var tts: TextToSpeech? = null
+    var isTtsInitialized = false
+
+    fun initializeTts(context: Context) {
+        if(tts == null){
+            tts = TextToSpeech(context.applicationContext , this)
+        }
+    }
+
+    override fun onInit(status : Int) {
+        if (status == TextToSpeech.SUCCESS){
+            val result = tts?.setLanguage(Locale.ENGLISH)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED){
+                isTtsInitialized = false
+            }else{
+                isTtsInitialized = true
+            }
+        }
+    }
+
+    fun speakWord(word: String) {
+
+        if (isTtsInitialized) {
+            tts?.speak(word, TextToSpeech.QUEUE_FLUSH, null, null)
+        }
+
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        tts?.stop()
+        tts?.shutdown()
+    }
+
+    // ✅ تابع جدید: پخش کلمه اصلی ذخیره شده
+    fun speakCurrentCorrectWord() {
+        currentWordObject?.english?.let { word ->
+            speakWord(word)
+        }
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
     private val _uiState = MutableStateFlow(QuizUiState())
 
     val uiState : StateFlow<QuizUiState> = _uiState.asStateFlow()
@@ -116,13 +164,29 @@ class QuizViewModel(private val wordsRepository: WordsRepository) : ViewModel() 
         usedWords.add(wordToUseObject.english)
         currentWordObject = wordToUseObject
 
-        _uiState.value = _uiState.value.copy(
-            currentWord = shuffleWord(wordToUseObject.english),
-            currentWordCount = usedWords.size,
-            inputUserGuess = "",
-            isGuess = false,
-//            message = "Word ${usedWords.size} of $WORD_COUNT_QUIZ"
-        )
+        val shuffledWord = shuffleWord(wordToUseObject.english)
+        val correctWord = wordToUseObject.english
+
+        // 🟢 تغییر کلیدی: از Coroutine برای مدیریت پخش و به‌روزرسانی UI استفاده می‌کنیم
+        viewModelScope.launch {
+            // 1. ابتدا TTS را متوقف کنید تا هر پخش قبلی متوقف شود.
+            tts?.stop()
+
+            // 2. UI را با کلمه شافل شده به‌روزرسانی کنید.
+            _uiState.value = _uiState.value.copy(
+                currentWord = shuffledWord,
+                currentWordCount = usedWords.size,
+                inputUserGuess = "",
+                isGuess = false,
+                // پیام را اینجا به‌روزرسانی کنید تا سریعتر ظاهر شود
+                message = "Word ${usedWords.size} of $WORD_COUNT_QUIZ"
+            )
+
+            // 3. با یک تأخیر کوتاه (اختیاری) کلمه صحیح را پخش کنید.
+             kotlinx.coroutines.delay(50) // اگر مشکل ادامه داشت، این خط را فعال کنید
+
+            speakWord(correctWord) // 🟢 پخش کلمه صحیح
+        }
     }
 
     private fun shuffleWord(word: String): String {

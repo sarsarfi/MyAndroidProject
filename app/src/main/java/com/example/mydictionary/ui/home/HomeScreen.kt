@@ -125,7 +125,8 @@ fun HomeScreen(
                             iconImage = cardData[index].third,       // iconImage
                             image = imageResources[index],           // image
                             onClick = clickActions[index],           // onClick
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .padding(innerPading)
                         )
                     }

@@ -1,6 +1,7 @@
 package com.example.mydictionary.ui.wordlist
 
 import WordsRepository
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mydictionary.data.Word
@@ -10,8 +11,46 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import android.speech.tts.TextToSpeech
+import android.speech.tts.TextToSpeech.OnInitListener
+import java.util.Locale
 
-class LeitnerBoxViewModel(private val wordsRepository: WordsRepository) : ViewModel() {
+class LeitnerBoxViewModel(private val wordsRepository: WordsRepository) : ViewModel() , OnInitListener {
+
+    private var tts : TextToSpeech? = null
+    private var isTtsInitialized = false
+
+    fun initializeTts(context : Context){
+        if (tts == null){
+            tts = TextToSpeech(context.applicationContext , this)
+        }
+    }
+    override fun onInit(status: Int) {
+        if(status == TextToSpeech.SUCCESS){
+
+            val result = tts?.setLanguage(Locale.ENGLISH)
+
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED){
+                isTtsInitialized = false
+            }else{
+                isTtsInitialized = true
+            }
+        }
+    }
+
+    fun speakWord(text: String){
+            if (isTtsInitialized && tts != null && text.isNotBlank()) {
+                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "WORD_TTS_ID")
+            }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        tts?.stop()
+        tts?.shutdown()
+        tts = null
+    }
+
 
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
@@ -19,11 +58,10 @@ class LeitnerBoxViewModel(private val wordsRepository: WordsRepository) : ViewMo
 
     // فواصل زمانی مرور برای هر جعبه (بر حسب میلی‌ثانیه)
     private val BOX_INTERVALS = mapOf(
-        1 to System.currentTimeMillis(),  // 1 روز
-        2 to 1L * 24 * 60 * 60 * 1000L,  // 3 روز
-        3 to 3L * 24 * 60 * 60 * 1000L,  // 7 روز
-        4 to 7L * 24 * 60 * 60 * 1000L, // 14 روز
-        5 to 14L * 24 * 60 * 60 * 1000L  // 30 روز
+        2 to 1L * 24 * 60 * 60 * 1000L,  // 1 روز
+        3 to 3L * 24 * 60 * 60 * 1000L,  // 3 روز
+        4 to 7L * 24 * 60 * 60 * 1000L, // 7 روز
+        5 to 14L * 24 * 60 * 60 * 1000L  // 14 روز
     )
 
     // کاربر کلمه را بلد شد
@@ -57,13 +95,15 @@ class LeitnerBoxViewModel(private val wordsRepository: WordsRepository) : ViewMo
     }
 
     private fun calculateNextReview(boxId: Int): Long {
-        val interval = BOX_INTERVALS[boxId] ?: BOX_INTERVALS[1]!!
-        if (boxId == 1) {
-            return System.currentTimeMillis()
+        return if (boxId == 1) {
+            System.currentTimeMillis()
         } else {
-            return System.currentTimeMillis() + interval
+            val interval = BOX_INTERVALS[boxId]
+                ?: error("Invalid boxId: $boxId")
+            System.currentTimeMillis() + interval
         }
     }
+
 
     // StateFlow برای UI
     val uiState: StateFlow<LeitnerUiState> =

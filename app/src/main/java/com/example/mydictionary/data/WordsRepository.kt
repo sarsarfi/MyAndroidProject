@@ -9,7 +9,6 @@ interface WordsRepository {
 
     suspend fun insertWord(word: Word)
 
-    // ✅ اضافه کردن متد insertAll
     suspend fun insertWords(words: List<Word>)
 
     suspend fun updateWord(word: Word)
