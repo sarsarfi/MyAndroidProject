@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -119,24 +120,15 @@ private fun WordInputForm(
         OutlinedTextField(
             value = wordDetails.englishWord,
             onValueChange = { newValue ->
-                // 1. فیلتر کردن: فقط حروف انگلیسی را مجاز می‌کند
-                val filteredValue = newValue.filter { it.isLetter() }
+                val filteredValue = newValue.filter { it.isLetter() || it == ' ' }
 
-                // 2. منطق تبدیل: حرف اول بزرگ، بقیه کوچک
-                val capitalizedValue = if (filteredValue.isNotEmpty()) {
-                    // حرف اول را بزرگ می‌کند (Book -> B)
-                    filteredValue.substring(0, 1).uppercase() +
-                            // بقیه حروف را کوچک می‌کند (ook)
-                            filteredValue.substring(1).lowercase()
-                } else {
-                    filteredValue
-                }
+                val lowercaseValue = filteredValue.lowercase()
 
-                onValueChange(wordDetails.copy(englishWord = capitalizedValue))
+                onValueChange(wordDetails.copy(englishWord = lowercaseValue))
             },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
-                capitalization = KeyboardCapitalization.Words
+                capitalization = KeyboardCapitalization.None
             ),
             label = { Text(stringResource(R.string.enter_your_word)) },
             singleLine = true,
@@ -163,12 +155,13 @@ private fun WordInputForm(
                 errorContainerColor = MaterialTheme.colorScheme.errorContainer
             ),
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text
+                keyboardType = KeyboardType.Text ,
             ),
             modifier = Modifier.fillMaxWidth()
         )
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

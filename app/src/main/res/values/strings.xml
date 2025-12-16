@@ -24,7 +24,7 @@
     <string name="description_quiz">The test is that the word is displayed as scrambled letters and the user must guess what the word is and press the submit button to display the next word and earn points.</string>
     <string name="categorize_words">Categorize words</string>
     <string name="leitner_box">Leitner box</string>
-    <string name="list_of_all_words">List of all words</string>
+    <string name="list_of_all_words">The list of all words is located in this section (all the words you received from Excel, the words you entered yourself, and the words rejected from the word guessing game).</string>
     <string name="list_words_excel">Excel word list</string>
     <string name="description_leitner_box">In this section, the vocabulary list is displayed as flashcards.</string>
     <string name="description_all_words">List of all words</string>
@@ -33,4 +33,6 @@
     <string name="no_words_body">There are no words in the word list for the word guessing game.</string>
     <string name="no_words_title">Empty word list</string>
     <string name="back">Back</string>
+    <string name="about">About</string>
+    <string name="description_about">Application guide</string>
 </resources>

@@ -166,9 +166,16 @@ private fun ListWords(
                     onSpeakWord = {onSpeakWord(item)},
                     modifier = Modifier
                         .padding(4.dp)
-                        .clickable { /*onWordClick*/ } // ✅ اینجا هم تابع باید فراخوانی شود!
+                        .clickable { /*onWordClick*/ }
                 )
             }
+        }
+        item {
+            Divider(
+                modifier = Modifier.padding(vertical = 16.dp, horizontal = 16.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
         }
         item {
             Text(
@@ -242,7 +249,6 @@ private fun SkippedWordItem(
 //                        tint = MaterialTheme.colorScheme.onErrorContainer
 //                    )
 //                }
-                // آیکون هشدار یا راهنما
                 IconButton(onClick = {}) {
                     Icon(
                         imageVector = Icons.Filled.Warning, // استفاده از آیکون پیش‌فرض Warning
@@ -279,7 +285,7 @@ private fun DictionaryWord(
             ){
                 Text(
                     text = word.english,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                 )
                 Icon(
                     imageVector = Icons.Outlined.VolumeUp,
@@ -292,7 +298,7 @@ private fun DictionaryWord(
             }
                 Text(
                     text = word.persian,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall ,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f)
                 )

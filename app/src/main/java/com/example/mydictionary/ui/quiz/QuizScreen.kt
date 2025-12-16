@@ -246,7 +246,13 @@ fun GameLayout(modifier: Modifier = Modifier,
                     unfocusedContainerColor = colorScheme.surface,
                     disabledContainerColor = colorScheme.surface,
                 ),
-                onValueChange = {onValueChange(it)},
+                onValueChange = { newValue ->
+                    val filteredValue = newValue.filter { it.isLetter() || it == ' ' }
+
+                    val lowercaseValue = filteredValue.lowercase()
+
+                    onValueChange(lowercaseValue)
+                },
                 label = { Text(stringResource(R.string.enter_your_word)) },
                 isError = true,
                 keyboardOptions = KeyboardOptions.Default.copy(
