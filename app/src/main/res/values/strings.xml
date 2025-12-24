@@ -35,4 +35,6 @@
     <string name="back">Back</string>
     <string name="about">About</string>
     <string name="description_about">Application guide</string>
+    <string name="report">Report</string>
+    <string name="description_report">Number of new words added to the dictionary in the last seven days</string>
 </resources>

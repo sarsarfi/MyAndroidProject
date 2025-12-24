@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -221,8 +222,9 @@ fun GameLayout(modifier: Modifier = Modifier,
             )
             Text(
                 text = quizUiState.currentWord,
-                style = typography.displayMedium
-            )
+                fontSize = 28.sp ,
+                fontWeight = FontWeight.Bold
+                )
             Icon(
                 imageVector = Icons.Filled.VolumeUp,
                 contentDescription = null,

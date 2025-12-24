@@ -165,9 +165,9 @@ fun HomeScreen(
 
                 item {
                     StatCard(
-                        titleRes = R.string.about,
-                        description = R.string.description_about ,
-                        image = R.drawable.about ,
+                        titleRes = R.string.report,
+                        description = R.string.description_report ,
+                        image = R.drawable.bar_chart ,
                         color = Color(0xFFE0F2F1),
                         onClick = onAbout
                     )

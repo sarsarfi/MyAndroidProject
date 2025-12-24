@@ -11,12 +11,15 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface WordDao {
 
-    // تغییر متد insert برای پشتیبانی از لیست کلمات
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(words: List<Word>)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertAll(words: List<Word>)
+    suspend fun insertAll(words: List<Word>)//get from excel file
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(word: Word)
+
 
 
     @Update
@@ -47,5 +50,8 @@ interface WordDao {
 
     @Query("SELECT * FROM word WHERE leitnerBox < 5 AND nextReviewDate <= :currentTime ORDER BY leitnerBox ASC, nextReviewDate ASC")
     fun getAllWordForReview(currentTime: Long): Flow<List<Word>>
+
+    @Query("SELECT dateAdded FROM word ORDER BY dateAdded DESC")
+    fun getAllDateAdded(): Flow<List<Long>>
 
 }

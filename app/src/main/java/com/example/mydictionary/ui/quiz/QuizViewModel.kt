@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import android.speech.tts.TextToSpeech
 import android.speech.tts.TextToSpeech.OnInitListener
+import com.example.mydictionary.data.GameState
+import com.example.mydictionary.data.GameStateRepository
 import java.util.Locale
 
 data class QuizUiState(
@@ -32,7 +34,9 @@ data class WordListUiState(val wordList: List<Word> = listOf())
 private const val SCORE_QUIZ = 20
 private const val WORD_COUNT_QUIZ = 10
 
-class QuizViewModel(private val wordsRepository: WordsRepository) : ViewModel() , OnInitListener {
+class QuizViewModel(private val wordsRepository: WordsRepository ,
+    private val gameStateRepository: GameStateRepository
+) : ViewModel() , OnInitListener {
 
     // Add pronunciation logic
     private var tts: TextToSpeech? = null
@@ -183,7 +187,7 @@ class QuizViewModel(private val wordsRepository: WordsRepository) : ViewModel() 
             )
 
             // 3. با یک تأخیر کوتاه (اختیاری) کلمه صحیح را پخش کنید.
-             kotlinx.coroutines.delay(50) // اگر مشکل ادامه داشت، این خط را فعال کنید
+            kotlinx.coroutines.delay(50) // اگر مشکل ادامه داشت، این خط را فعال کنید
 
             speakWord(correctWord) // 🟢 پخش کلمه صحیح
         }
@@ -208,29 +212,30 @@ class QuizViewModel(private val wordsRepository: WordsRepository) : ViewModel() 
         val userInput = _uiState.value.inputUserGuess.trim()
         val correctWord = currentWordObject?.english ?: ""
 
+        // اگر ورودی خالی بود، اصلاً به عنوان جواب درست قبول نکن
         if (userInput.isBlank()) {
-            _uiState.value = _uiState.value.copy(
-                message = "Please enter your guess"
-            )
+            _uiState.value = _uiState.value.copy(message = "Please enter your guess")
             return false
         }
 
+        // مقایسه دقیق (بدون حساسیت به حروف بزرگ و کوچک)
         return if (userInput.equals(correctWord, ignoreCase = true)) {
-            submit()
+            submit() // فقط اگر کاملاً یکی بود
             true
         } else {
-            skip()
+            skip() // اگر غلط بود یا اسکیپ شد، این تابع اجرا شود
             false
         }
     }
 
     fun submit() {
-        currentWordObject?.let { word ->
-            viewModelScope.launch {
-                // اگر کلمه قبلاً اسکیپ شده بود، از حالت اسکیپ خارجش کن
-                if (word.isSkipped) {
-                    wordsRepository.updateSkipStatus(word.id, false)
-                }
+        val wordId = currentWordObject?.id ?: return
+
+        // ابتدا آمار را در دیتابیس ثبت کن
+        viewModelScope.launch {
+            gameStateRepository.updateStats(wordId, true)
+            if (currentWordObject?.isSkipped == true) {
+                wordsRepository.updateSkipStatus(wordId, false)
             }
         }
 
@@ -244,40 +249,42 @@ class QuizViewModel(private val wordsRepository: WordsRepository) : ViewModel() 
                 message = "Congratulations! Final score: $updateScore"
             )
         } else {
-            wordRandom()
+            // اول پیام موفقیت را نشان بده، بعد کلمه را عوض کن
             _uiState.value = _uiState.value.copy(
                 score = updateScore,
                 isGuess = true,
                 inputUserGuess = "",
                 message = "Correct! +$SCORE_QUIZ points"
             )
+            wordRandom() // حالا کلمه بعدی
         }
     }
 
     fun skip() {
-        currentWordObject?.let { word ->
-            viewModelScope.launch {
-                // ✅ اصلاح: فقط وضعیت اسکیپ را آپدیت کن
-                wordsRepository.updateSkipStatus(word.id, true)
+        val word = currentWordObject ?: return
+        val wordId = word.id
 
-                // ✅ همچنین کلمه را به جعبه اول لایتنر برگردان
-                wordsRepository.updateLeitnerBox(word.id, 1)
-                wordsRepository.updateNextReviewDate(word.id, System.currentTimeMillis())
+        viewModelScope.launch {
+            // ۱. چاپ آیدی کلمه برای اطمینان
+            android.util.Log.d("QUIZ_SAVE", "Attempting to save WRONG for Word: ${word.english} with ID: $wordId")
+
+            // ۲. انجام عملیات بروزرسانی
+            gameStateRepository.updateStats(wordId, false)
+
+            // ۳. وقفه کوتاه برای اطمینان از پایان تراکنش دیتابیس
+            kotlinx.coroutines.delay(200)
+
+            // ۴. خواندن مستقیم از دیتابیس بلافاصله بعد از ذخیره
+            val checkData = gameStateRepository.getGameStateByWordId(wordId)
+            if (checkData == null) {
+                android.util.Log.e("QUIZ_SAVE", "FAILED! No record found in GameState for ID: $wordId")
+            } else {
+                android.util.Log.d("QUIZ_SAVE", "SUCCESS! DB now has -> Correct: ${checkData.correctAnswer}, Wrong: ${checkData.wrongAnswer}")
             }
-        }
 
-        if (usedWords.size >= WORD_COUNT_QUIZ) {
-            _uiState.value = _uiState.value.copy(
-                isGameOver = true,
-                message = "Game over! Final score: ${_uiState.value.score}"
-            )
-        } else {
+            // ادامه کارهای دیگر...
+            wordsRepository.updateSkipStatus(wordId, true)
             wordRandom()
-            _uiState.value = _uiState.value.copy(
-                isGuess = false,
-                inputUserGuess = "",
-                message = "Word skipped - will be reviewed in Leitner box"
-            )
         }
     }
 

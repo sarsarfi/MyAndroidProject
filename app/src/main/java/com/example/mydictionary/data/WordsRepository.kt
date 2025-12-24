@@ -25,5 +25,9 @@ interface WordsRepository {
 
     suspend fun updateSkipStatus(wordId: Int, isSkipped: Boolean)
 
-
+    fun getAllDateAdded(): Flow<List<Long>>
 }
+
+
+
+

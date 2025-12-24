@@ -39,9 +39,9 @@ class LeitnerBoxViewModel(private val wordsRepository: WordsRepository) : ViewMo
     }
 
     fun speakWord(text: String){
-            if (isTtsInitialized && tts != null && text.isNotBlank()) {
-                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "WORD_TTS_ID")
-            }
+        if (isTtsInitialized && tts != null && text.isNotBlank()) {
+            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "WORD_TTS_ID")
+        }
     }
 
     override fun onCleared() {
@@ -129,7 +129,7 @@ class LeitnerBoxViewModel(private val wordsRepository: WordsRepository) : ViewMo
     // انتخاب کلمه بعدی برای نمایش
     fun getNextWordToReview(uiState: LeitnerUiState): Word? {
         // اول high priority، بعد normal
-        return uiState.highPriorityWords.firstOrNull() ?: uiState.normalPriorityWords.firstOrNull()
+        return uiState.highPriorityWords.firstOrNull()
     }
 
     private val _meaningWord = MutableStateFlow(false)

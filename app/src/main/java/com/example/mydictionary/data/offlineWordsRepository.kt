@@ -31,4 +31,7 @@ class offlineWordsRepository(private val wordDao: WordDao) : WordsRepository {
 
     override suspend fun updateSkipStatus(wordId: Int, isSkipped: Boolean) =
         wordDao.updateSkipStatus(wordId, isSkipped)
+
+    override fun getAllDateAdded(): Flow<List<Long>> = wordDao.getAllDateAdded()
+
 }

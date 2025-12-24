@@ -56,7 +56,7 @@ fun WordListScreen(
     navigateBack : () -> Unit,
     modifier : Modifier = Modifier,
     wordListViewModel: WordListViewModel = viewModel(factory = AppViewModelProvider.Factory)
-    ) {
+) {
     val listUiState by wordListViewModel.uiState.collectAsState()
 
 
@@ -296,20 +296,20 @@ private fun DictionaryWord(
                         .alignByBaseline()
                 )
             }
-                Text(
-                    text = word.persian,
-                    style = MaterialTheme.typography.titleSmall ,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f)
+            Text(
+                text = word.persian,
+                style = MaterialTheme.typography.titleSmall ,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(
+                onClick = {onDelete(word)}
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Delete ,
+                    contentDescription = null
                 )
-                IconButton(
-                    onClick = {onDelete(word)}
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete ,
-                        contentDescription = null
-                    )
-                }
+            }
         }
     }
 }
@@ -353,7 +353,7 @@ fun WordListPreview(){
             wordUpdate = {} ,
             navigateBack = {} ,
             wordListViewModel = viewModel()
-            )
+        )
 
     }
 }

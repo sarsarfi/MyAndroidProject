@@ -34,4 +34,8 @@ class FakeWordsRepository : WordsRepository {
 
     override suspend fun updateSkipStatus(wordId: Int, isSkipped: Boolean) {}
 
+    override fun getAllDateAdded(): Flow<List<Long>> {
+        TODO("Not yet implemented")
+    }
+
 }

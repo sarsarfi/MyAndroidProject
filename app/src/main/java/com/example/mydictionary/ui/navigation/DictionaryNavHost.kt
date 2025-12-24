@@ -7,7 +7,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.mydictionary.ui.AppViewModelProvider
-import com.example.mydictionary.ui.about.AboutScreenDestination
 import com.example.mydictionary.ui.addword.AddWordDestination
 import com.example.mydictionary.ui.addword.AddWordScreen
 import com.example.mydictionary.ui.quiz.GameScreen
@@ -16,6 +15,8 @@ import com.example.mydictionary.ui.wordlist.ExcelWordListScreen
 import com.example.mydictionary.ui.wordlist.ExcelWordsScreenDestination
 import com.example.mydictionary.ui.home.HomeDestination
 import com.example.mydictionary.ui.home.HomeScreen
+import com.example.mydictionary.ui.report.ReportScreen
+import com.example.mydictionary.ui.report.ReportScreenDestination
 import com.example.mydictionary.ui.wordlist.LeitnerBoxScreenDestination
 import com.example.mydictionary.ui.wordlist.LeitnerScreen
 import com.example.mydictionary.ui.wordlist.WordListDestination
@@ -37,7 +38,7 @@ fun DictionaryNavHostApp(
                 onQuiz = { navController.navigate(QuizDestination.route) },
                 onLeitnerBox = { navController.navigate(LeitnerBoxScreenDestination.route) } ,
                 onExcelWord = {navController.navigate(ExcelWordsScreenDestination.route)} ,
-                onAbout = {navController.navigate(AboutScreenDestination.route)},
+                onAbout = {navController.navigate(ReportScreenDestination.route)},
                 onAddWord = {navController.navigate(AddWordDestination.route)}
             )
         }
@@ -82,6 +83,13 @@ fun DictionaryNavHostApp(
         composable(QuizDestination.route) {
             GameScreen(
                 navigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(route = ReportScreenDestination.route) {
+            ReportScreen(
+                navigateBack = { navController.popBackStack() } ,
+                viewModel = viewModel(factory = AppViewModelProvider.Factory)
             )
         }
     }
