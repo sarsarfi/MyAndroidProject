@@ -4,8 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.mydictionary.ui.AppViewModelProvider
 import com.example.mydictionary.ui.addword.AddWordDestination
 import com.example.mydictionary.ui.addword.AddWordScreen
@@ -19,6 +21,8 @@ import com.example.mydictionary.ui.report.ReportScreen
 import com.example.mydictionary.ui.report.ReportScreenDestination
 import com.example.mydictionary.ui.wordlist.LeitnerBoxScreenDestination
 import com.example.mydictionary.ui.wordlist.LeitnerScreen
+import com.example.mydictionary.ui.wordlist.WordEditDestination
+import com.example.mydictionary.ui.wordlist.WordEditScreen
 import com.example.mydictionary.ui.wordlist.WordListDestination
 import com.example.mydictionary.ui.wordlist.WordListScreen
 
@@ -66,7 +70,8 @@ fun DictionaryNavHostApp(
                     navController.popBackStack()
                 },
                 wordListViewModel = viewModel(factory = AppViewModelProvider.Factory),
-                wordUpdate = {}
+                navigateToEditScreen = { wordId ->
+                    navController.navigate("${WordEditDestination.route}/$wordId") }
             )
         }
 
@@ -90,6 +95,18 @@ fun DictionaryNavHostApp(
             ReportScreen(
                 navigateBack = { navController.popBackStack() } ,
                 viewModel = viewModel(factory = AppViewModelProvider.Factory)
+            )
+        }
+        composable(
+            route = WordEditDestination.routeWithArgs,
+            arguments = listOf(navArgument(WordEditDestination.wordIdArg) {
+                type = NavType.IntType // حتما این را وارد کن تا برنامه بفهمد ورودی عدد است
+            })
+        ) {
+            WordEditScreen(
+                navigateBack = { navController.popBackStack() },
+                onNavigateUp = { navController.navigateUp() }
+                // viewModel به صورت خودکار خودش ساخته می‌شود، نیازی به نوشتن دستی نیست
             )
         }
     }

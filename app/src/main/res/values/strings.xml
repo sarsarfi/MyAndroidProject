@@ -37,4 +37,7 @@
     <string name="description_about">Application guide</string>
     <string name="report">Report</string>
     <string name="description_report">Number of new words added to the dictionary in the last seven days</string>
+    <string name="repair">Word repair operation</string>
+    <string name="edit_screen">Edit Word</string>
+    <string name="repair_description">You can edit your word by selecting the Edit button and delete it by selecting the Delete button.</string>
 </resources>

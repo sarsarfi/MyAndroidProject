@@ -9,7 +9,6 @@ import androidx.room.PrimaryKey
 data class Word(
    @PrimaryKey(autoGenerate = true)
    val id : Int = 0  ,
-   @ColumnInfo()
    val english: String,
    val persian: String ,
    val isSkipped: Boolean = false ,
@@ -30,7 +29,7 @@ data class Word(
 )
 data class GameState(
    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-   @ColumnInfo(name = "word_id") val wordId: Int, // مطمئن شوید نام ستون در دیتابیس word_id است
+   @ColumnInfo(name = "word_id") val wordId: Int,
    val correctAnswer: Int = 0,
    val wrongAnswer: Int = 0
 )

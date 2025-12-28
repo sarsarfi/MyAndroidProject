@@ -17,12 +17,8 @@ interface WordDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(words: List<Word>)//get from excel file
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(word: Word)
 
-
-
-    @Update
+   @Update
     suspend fun update(word: Word)
 
     @Delete

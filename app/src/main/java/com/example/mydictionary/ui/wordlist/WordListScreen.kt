@@ -1,29 +1,16 @@
 package com.example.mydictionary.ui.wordlist
 
-
-
-import android.content.Context
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -40,34 +27,29 @@ import com.example.mydictionary.ui.AppViewModelProvider
 import com.example.mydictionary.ui.navigation.NavigationDestination
 import com.example.mydictionary.ui.theme.MyDictionaryTheme
 import com.example.mydictionary.ui.wordlist.DictionaryWord
-import com.example.mydictionary.ui.wordlist.WordListBody
 
-object WordListDestination : NavigationDestination{
+object WordListDestination : NavigationDestination {
     override val route = "wordlist"
     override val titleRes = R.string.list_of_words
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WordListScreen(
-    navigateToAddNewWord : () -> Unit,
-    wordUpdate : (Int) -> Unit,
-    navigateBack : () -> Unit,
-    modifier : Modifier = Modifier,
+    navigateToAddNewWord: () -> Unit,
+    navigateBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    navigateToEditScreen: (Int) -> Unit,
     wordListViewModel: WordListViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val listUiState by wordListViewModel.uiState.collectAsState()
-
-
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-
     val context = LocalContext.current
 
-    // ✅ 2. فراخوانی initializeTts فقط یک بار هنگام ورود به صفحه
     LaunchedEffect(Unit) {
         wordListViewModel.initializeTts(context)
     }
+
     MyDictionaryTheme {
         Scaffold(
             modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -75,77 +57,96 @@ fun WordListScreen(
                 DictionaryTopAppBar(
                     title = stringResource(WordListDestination.titleRes),
                     canNavigateBack = true,
-                    scrollBehavior = scrollBehavior ,
+                    scrollBehavior = scrollBehavior,
                     navigateUp = navigateBack
                 )
             },
             floatingActionButton = {
                 FloatingActionButton(
                     onClick = navigateToAddNewWord,
-                    shape = MaterialTheme.shapes.small,
-                    modifier = modifier
+                    shape = MaterialTheme.shapes.small
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = stringResource(R.string.add_newword)
-                    )
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_newword))
                 }
             }
         ) { innerPadding ->
             WordListBody(
                 wordsList = listUiState.wordsList,
-                skippedWordsList = listUiState.skippedWords ,
-                /*onWordClick = wordUpdate,*/
+                skippedWordsList = listUiState.skippedWords,
+                onUpdateWord = { word ->
+                    navigateToEditScreen(word.id)
+                },
                 contentPading = innerPadding,
-                onDelete = {currentWord : Word -> wordListViewModel.deleteWord(currentWord)},
-                onSpeakWord = { currentWord: Word -> wordListViewModel.speakWord(currentWord.english) },                modifier = Modifier.fillMaxSize()
+                onDelete = { word -> wordListViewModel.deleteWord(word) },
+                onSpeakWord = { word -> wordListViewModel.speakWord(word.english) },
+                modifier = Modifier.fillMaxSize()
             )
         }
     }
 }
 
-
 @Composable
 fun WordListBody(
     wordsList: List<Word>,
-    //onWordClick: (Int) -> Unit,
+    onUpdateWord: (Word) -> Unit,
     modifier: Modifier = Modifier,
-    skippedWordsList : List<Word>,
-    onDelete : (Word) -> Unit,
+    skippedWordsList: List<Word>,
+    onDelete: (Word) -> Unit,
     onSpeakWord: (Word) -> Unit,
     contentPading: PaddingValues = PaddingValues(0.dp)
-){
+) {
+    // show dialog and selected word when open options
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedWord by remember { mutableStateOf<Word?>(null) } // remembers the selected word
+
+    // show dialog if selectedWord is not null
+    if (showDialog && selectedWord != null) {
+        RepairAlterDialog(
+            onDismiss = { showDialog = false },
+            onDelete = {
+                onDelete(selectedWord!!)
+                showDialog = false
+            },
+            onRepair = {
+                onUpdateWord(selectedWord!!)
+                showDialog = false
+            }
+        )
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier,
+        modifier = modifier.padding(contentPading),
     ) {
-        if (wordsList.isEmpty()) {
+        if (wordsList.isEmpty() && skippedWordsList.isEmpty()) {
             Text(
                 text = stringResource(R.string.empity_list),
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(contentPading)
+                modifier = Modifier.padding(16.dp)
             )
-        } else
+        } else {
             ListWords(
                 wordsList = wordsList,
-                //onWordClick = onWordClick,
-                contentPadding = contentPading,
-                skippedWords = skippedWordsList ,
-                onDelete = onDelete,
+                contentPadding = PaddingValues(0.dp),
+                skippedWords = skippedWordsList,
                 onSpeakWord = onSpeakWord,
-                modifier = modifier
+                onOpenOptions = { word ->
+                    selectedWord = word
+                    showDialog = true
+                }
             )
+        }
     }
 }
+
 @Composable
 private fun ListWords(
     wordsList: List<Word>,
-    //onWordClick: (Int) -> Unit,
     contentPadding: PaddingValues,
     skippedWords: List<Word>,
-    onDelete : (Word) -> Unit,
     onSpeakWord: (Word) -> Unit,
+    onOpenOptions: (Word) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -154,108 +155,59 @@ private fun ListWords(
     ) {
         if (skippedWords.isNotEmpty()) {
             item {
-                Text(
-                    text = "Skipped Words",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(8.dp)
-                )
+                Text("Skipped Words", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(8.dp))
             }
-            items(items = skippedWords) { item ->
+            items(skippedWords) { item ->
                 SkippedWordItem(
                     word = item,
-                    onSpeakWord = {onSpeakWord(item)},
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .clickable { /*onWordClick*/ }
+                    onSpeakWord = { onSpeakWord(item) },
+                    onOpenOptions = { onOpenOptions(item) },
+                    modifier = Modifier.padding(4.dp)
                 )
             }
         }
         item {
-            Divider(
-                modifier = Modifier.padding(vertical = 16.dp, horizontal = 16.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant
-            )
+            Text("The rest of the words", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(8.dp))
         }
-        item {
-            Text(
-                text = "The rest of the words in the list",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(8.dp)
-            )
-        }
-        // اول نمایش کلمات معمولی
-        items(items = wordsList) { item ->
+        items(wordsList) { item ->
             DictionaryWord(
                 word = item,
-                onDelete = {onDelete(item)},
-                onSpeakWord = {onSpeakWord(item)},
-                modifier = Modifier
-                    .padding(4.dp)
-                    .clickable { /*onWordClick*/ } // ✅ اینجا باید تابع فراخوانی شود!
+                onSpeakWord = { onSpeakWord(item) },
+                onOpenOptions = { onOpenOptions(item) },
+                modifier = Modifier.padding(4.dp)
             )
         }
     }
 }
 
-
-// یک کامپوزبل جدید در انتهای فایل WordListScreen.kt اضافه کنید
 @Composable
 private fun SkippedWordItem(
     word: Word,
     onSpeakWord: (Word) -> Unit,
+    onOpenOptions: () -> Unit,
     modifier: Modifier = Modifier
-){
+) {
     Card(
-        modifier = modifier.fillMaxWidth() ,
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp) ,
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
         shape = MaterialTheme.shapes.small
     ) {
         Row(
-            modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 10.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = word.english,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onErrorContainer
-                )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(word.english, style = MaterialTheme.typography.titleLarge)
                 Icon(
-                    imageVector = Icons.Outlined.VolumeUp,
-                    contentDescription = "Pronounce word",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {onSpeakWord(word)}
-                        .alignByBaseline()
+                    Icons.Outlined.VolumeUp,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp).clickable { onSpeakWord(word) }
                 )
             }
-            Text(
-                text = word.persian ,
-                style = MaterialTheme.typography.titleMedium ,
-                color = MaterialTheme.colorScheme.onErrorContainer
-            )
-            Row() {
-//                IconButton(onClick = {onDelete(word)}) {
-//                    Icon(
-//                        imageVector = Icons.Filled.Delete,
-//                        contentDescription = null,
-//                        tint = MaterialTheme.colorScheme.onErrorContainer
-//                    )
-//                }
-                IconButton(onClick = {}) {
-                    Icon(
-                        imageVector = Icons.Filled.Warning, // استفاده از آیکون پیش‌فرض Warning
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
+            Text(word.persian, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+            IconButton(onClick = onOpenOptions) {
+                Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -264,54 +216,56 @@ private fun SkippedWordItem(
 @Composable
 private fun DictionaryWord(
     word: Word,
-    onDelete : (Word) -> Unit,
-    onSpeakWord : (Word) -> Unit,
+    onSpeakWord: (Word) -> Unit,
+    onOpenOptions: () -> Unit,
     modifier: Modifier = Modifier
-){
+) {
     Card(
-        modifier = modifier ,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp) ,
+        modifier = modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = MaterialTheme.shapes.small
     ) {
         Row(
-            modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 10.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ){
-                Text(
-                    text = word.english,
-                    style = MaterialTheme.typography.titleMedium,
-                )
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(word.english, style = MaterialTheme.typography.titleMedium)
                 Icon(
-                    imageVector = Icons.Outlined.VolumeUp,
-                    contentDescription = "Pronounce word",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {onSpeakWord(word)}
-                        .alignByBaseline()
+                    Icons.Outlined.VolumeUp,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp).clickable { onSpeakWord(word) }
                 )
             }
-            Text(
-                text = word.persian,
-                style = MaterialTheme.typography.titleSmall ,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(
-                onClick = {onDelete(word)}
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Delete ,
-                    contentDescription = null
-                )
+            Text(word.persian, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+            IconButton(onClick = onOpenOptions) {
+                Icon(Icons.Outlined.MoreVert, contentDescription = null)
             }
         }
     }
+}
+
+@Composable
+fun RepairAlterDialog(
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    onRepair: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.repair)) },
+        text = { Text(text = stringResource(R.string.repair_description)) },
+        confirmButton = {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onDelete) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+                TextButton(onClick = onRepair) {
+                    Text("Edit" , color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+    )
 }
 
 @Preview(showBackground = true)
@@ -319,8 +273,9 @@ private fun DictionaryWord(
 fun OneWordDictionaryPreview(){
     MyDictionaryTheme {
         DictionaryWord(Word(english = "Apple" , persian = "سیب") ,
-            onDelete = {} ,
-            onSpeakWord = {}
+            onSpeakWord = {} ,
+            onOpenOptions = {} ,
+            modifier = Modifier.padding(4.dp)
         )
     }
 }
@@ -333,7 +288,7 @@ fun WordListBodyPreview(){
             Word(english = "Apple" , persian = "سیب"),
             Word(english = "Cat" , persian = "گربه") ,
             Word(english = "Red" , persian = "قرمز")),
-            /*onWordClick = {}*/
+            onUpdateWord = {} ,
             onSpeakWord = {},
             skippedWordsList = listOf(
                 Word(english = "ball" , persian = "توپ"),
@@ -350,9 +305,9 @@ fun WordListBodyPreview(){
 fun WordListPreview(){
     MyDictionaryTheme {
         WordListScreen(navigateToAddNewWord = {} ,
-            wordUpdate = {} ,
             navigateBack = {} ,
-            wordListViewModel = viewModel()
+            wordListViewModel = viewModel() ,
+            navigateToEditScreen = {}
         )
 
     }

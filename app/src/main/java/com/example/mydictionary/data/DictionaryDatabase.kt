@@ -8,8 +8,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Word::class , GameState::class], // ← اضافه کردن View
-    version = 9,
+    entities = [Word::class , GameState::class],
+    version = 10,
     exportSchema = false
 )
 abstract class DictionaryDatabase : RoomDatabase() {

@@ -24,7 +24,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -74,14 +73,14 @@ fun HomeScreen(
 
     // لیست کارت‌های کوچک‌تر که باید به صورت Grid نمایش داده شوند.
     val gridCards = listOf(
-        WordCategoryData(
+        CategoryItem(
             titleRes = R.string.leitner_box,
             descriptionRes = R.string.description_leitner_box,
             color = Color(0xFFE8F5E9),
             icon = R.drawable.box,
             onClick = onLeitnerBox
         ),
-        WordCategoryData(
+        CategoryItem(
             titleRes = R.string.list_words_excel,
             descriptionRes = R.string.description_excel_words,
             color = Color(0xFFD1C4E9),
@@ -293,7 +292,7 @@ fun AllWords(modifier: Modifier = Modifier ,
 
 
 // **کلاس داده برای دسته‌بندی‌ها**
-data class WordCategoryData(
+data class CategoryItem(
     @StringRes val titleRes: Int,
     @StringRes val descriptionRes: Int,
     val color: Color,
