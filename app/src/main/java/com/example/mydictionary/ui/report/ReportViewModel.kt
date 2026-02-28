@@ -11,19 +11,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.TextStyle
-import java.time.temporal.ChronoUnit
-import java.util.Locale
+import saman.zamani.persiandate.PersianDate
+import saman.zamani.persiandate.PersianDateFormat
+import java.util.TimeZone
+import java.util.concurrent.TimeUnit
 
-// وضعیت ظاهری صفحه گزارش
 data class ReportUiState(
     val isLoading: Boolean = false,
     val weeklyChartData: List<ChartData> = emptyList(),
     val totalCorrect: Int = 0,
     val totalWrong: Int = 0,
+    val wordReports: List<WordReport> = emptyList(),
     val topHardWords: List<WordReport> = emptyList()
 )
 
@@ -31,7 +29,7 @@ data class ChartData(val count: Int, val dayName: String)
 
 class ReportViewModel(
     private val wordsRepository: WordsRepository,
-    private val gameStatsRepository: GameStateRepository // اضافه کردن ریپازیتوری آمار
+    private val gameStatsRepository: GameStateRepository 
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ReportUiState())
@@ -45,34 +43,31 @@ class ReportViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            // 1. دریافت داده‌های نمودار هفتگی از WordsRepository
+            //  Get timestamp from WordsRepository
             launch {
                 wordsRepository.getAllDateAdded().collect { allDate ->
-                    val chartData = processDataToChartData(allDate)
+                    val chartData = processDataToChartDataPersian(allDate)
                     _uiState.update { it.copy(weeklyChartData = chartData) }
                 }
             }
 
-            // 2. دریافت آمار بازی از GameStatsRepository
-            // 2. دریافت آمار بازی از GameStatsRepository
+            //  Get game stats fromGameStatsRepository
             launch {
-                // به جای getAllGameState از getFullReport استفاده کنید
                 gameStatsRepository.getFullReport().collect { reportList ->
-                    val correct = reportList.sumOf { it.correctCount }
-                    val wrong = reportList.sumOf { it.wrongCount }
 
-                    // پیدا کردن لغاتی که کاربر بیشترین غلط را در آن‌ها داشته
-                    // حالا در اینجا به englishWord دسترسی دارید
+                    val correct = reportList.sumOf { it.correctCount }//sum of all correct
+                    val wrong = reportList.sumOf { it.wrongCount }// sum of wrong
+
                     val hardWords = reportList
-                        .filter { it.wrongCount > 0 }
-                        .sortedByDescending { it.wrongCount }
-                        .take(5)
+                        .filter { it.wrongCount > 0 }//deleted correctWord (just wrongWord at list)
+                        .sortedByDescending { it.wrongCount }// sorted by wrongCount(high wrong)
+                        .take(5)// select just 5 wrong answer where have high wrongCount
 
                     _uiState.update {
                         it.copy(
                             totalCorrect = correct,
                             totalWrong = wrong,
-                            // توجه: باید نوع داده را در ReportUiState به List<WordReport> تغییر دهید
+                            wordReports = reportList,
                             topHardWords = hardWords,
                             isLoading = false
                         )
@@ -81,23 +76,33 @@ class ReportViewModel(
             }
         }
     }
+    // convert timestamp date to chart data
 
-    // منطق تبدیل تاریخ‌های خام به فرمت نمودار
-    private fun processDataToChartData(allDate: List<Long>): List<ChartData> {
+    private fun processDataToChartDataPersian(allDate: List<Long>): List<ChartData> {
+
         val counts = MutableList(7) { 0 }
-        val zoneId = ZoneId.systemDefault()
-        val today = LocalDate.now(zoneId)
+
+        val today = PersianDate()
 
         allDate.forEach { timeMillis ->
-            val date = Instant.ofEpochMilli(timeMillis).atZone(zoneId).toLocalDate()
-            val daysAgo = ChronoUnit.DAYS.between(date, today).toInt()
+
+            val itemDate = PersianDate(timeMillis)
+
+            val diffMillis = today.time - itemDate.time
+            val daysAgo = TimeUnit.MILLISECONDS.toDays(diffMillis).toInt()
+
             if (daysAgo in 0..6) {
                 counts[6 - daysAgo]++
             }
         }
 
+        val formatter = PersianDateFormat("l") // نام روز هفته فارسی
+
         val dayNames = (6 downTo 0).map { i ->
-            today.minusDays(i.toLong()).dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.US)
+            val date = PersianDate().apply {
+                addDate(0, 0, (-i).toLong())
+            }
+            formatter.format(date)
         }
 
         return counts.mapIndexed { index, count ->
