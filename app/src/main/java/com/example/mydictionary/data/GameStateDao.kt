@@ -16,10 +16,9 @@ interface GameStateDao {
     @Query("SELECT * FROM game_state WHERE word_id = :wordId LIMIT 1")
     suspend fun getByWordId(wordId: Int): GameState?
 
-    // ✅ متد طلایی برای حل مشکل عدد صفر (Update یا Insert هوشمند)
     @androidx.room.Transaction
     suspend fun updateStats(wId: Int, isCorrect: Boolean) {
-        // ۱. چک کن آیا این کلمه قبلاً در جدول آمار بوده؟
+
         val existing = getByWordId(wId)
 
         if (existing == null) {
@@ -56,7 +55,6 @@ interface GameStateDao {
     @Query("SELECT * FROM game_state")
     fun getAll(): Flow<List<GameState>>
 
-    // 📊 کوئری گزارش ترکیبی (JOIN) برای نمایش نام کلمه در کنار آمار
     @Query("""
     SELECT 
         word.english as englishWord, 

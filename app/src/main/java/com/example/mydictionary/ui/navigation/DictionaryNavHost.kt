@@ -11,18 +11,18 @@ import androidx.navigation.navArgument
 import com.example.mydictionary.ui.AppViewModelProvider
 import com.example.mydictionary.ui.addword.AddWordDestination
 import com.example.mydictionary.ui.addword.AddWordScreen
+import com.example.mydictionary.ui.editword.WordEditDestination
+import com.example.mydictionary.ui.editword.WordEditScreen
+import com.example.mydictionary.ui.excelwords.ExcelWordListScreen
+import com.example.mydictionary.ui.excelwords.ExcelWordsScreenDestination
 import com.example.mydictionary.ui.quiz.GameScreen
 import com.example.mydictionary.ui.quiz.QuizDestination
-import com.example.mydictionary.ui.wordlist.ExcelWordListScreen
-import com.example.mydictionary.ui.wordlist.ExcelWordsScreenDestination
 import com.example.mydictionary.ui.home.HomeDestination
 import com.example.mydictionary.ui.home.HomeScreen
+import com.example.mydictionary.ui.leitnerbox.LeitnerBoxScreenDestination
+import com.example.mydictionary.ui.leitnerbox.LeitnerScreen
 import com.example.mydictionary.ui.report.ReportScreen
 import com.example.mydictionary.ui.report.ReportScreenDestination
-import com.example.mydictionary.ui.wordlist.LeitnerBoxScreenDestination
-import com.example.mydictionary.ui.wordlist.LeitnerScreen
-import com.example.mydictionary.ui.wordlist.WordEditDestination
-import com.example.mydictionary.ui.wordlist.WordEditScreen
 import com.example.mydictionary.ui.wordlist.WordListDestination
 import com.example.mydictionary.ui.wordlist.WordListScreen
 
@@ -100,13 +100,12 @@ fun DictionaryNavHostApp(
         composable(
             route = WordEditDestination.routeWithArgs,
             arguments = listOf(navArgument(WordEditDestination.wordIdArg) {
-                type = NavType.IntType // حتما این را وارد کن تا برنامه بفهمد ورودی عدد است
+                type = NavType.IntType
             })
         ) {
             WordEditScreen(
                 navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() }
-                // viewModel به صورت خودکار خودش ساخته می‌شود، نیازی به نوشتن دستی نیست
             )
         }
     }

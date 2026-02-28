@@ -41,7 +41,6 @@ object AddWordDestination : NavigationDestination {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddWordScreen(
-    modifier: Modifier = Modifier,
     viewModel: AddWordViewModel = viewModel(factory = AppViewModelProvider.Factory),
     navigateBack: () -> Unit
 ) {

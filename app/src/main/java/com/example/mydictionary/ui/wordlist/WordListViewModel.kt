@@ -56,17 +56,17 @@ class WordListViewModel(private val wordsRepository: WordsRepository) : ViewMode
 
     }
     companion object{
-        private const val TIMOUT_MILLIS = 5_000L
+        private const val TIMEOUT_MILLIS = 5_000L
     }
     val uiState : StateFlow<WordListUiState> = wordsRepository.getAllWordsDictionary()
         .combine(wordsRepository.getAllSkippedWords()) { allWords, skippedWords ->
-            // ترکیب نتایج دو Flow در یک UiState
+            // combine two flow in one ui state
             WordListUiState(wordsList = allWords , skippedWords = skippedWords)
         }
         .stateIn(
             scope = viewModelScope ,
-            started = SharingStarted.WhileSubscribed(TIMOUT_MILLIS) ,
-            initialValue = WordListUiState() // مقدار اولیه
+            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS) ,
+            initialValue = WordListUiState()
         )
 
 

@@ -57,11 +57,10 @@ object HomeDestination : NavigationDestination{
 
 }
 
-// **نکته**: من کامپوننت MenuCard را به StatCard تغییر نام دادم و آن را برای استفاده از LazyVerticalGrid سازگار کردم.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onLeitnerBox: () -> Unit, // اینها در صفحه دسته‌بندی استفاده می‌شوند، نه اینجا.
+    onLeitnerBox: () -> Unit,
     onAllWord: () -> Unit,
     onExcelWord: () -> Unit,
     modifier: Modifier = Modifier ,
@@ -71,7 +70,6 @@ fun HomeScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
-    // لیست کارت‌های کوچک‌تر که باید به صورت Grid نمایش داده شوند.
     val gridCards = listOf(
         CategoryItem(
             titleRes = R.string.leitner_box,
@@ -95,7 +93,7 @@ fun HomeScreen(
             topBar = {
                 DictionaryTopAppBar(
                     title = stringResource(HomeDestination.titleRes),
-                    canNavigateBack = false, // Home معمولاً نمی‌تواند به عقب برود
+                    canNavigateBack = false,
                     scrollBehavior = scrollBehavior
                 )
             },
@@ -112,12 +110,11 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPading)
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(horizontal = 8.dp),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
 
-                // 1. کارت بزرگ AllWords (تمام عرض)
                 item {
                     AllWords(
                         modifier = Modifier
@@ -140,12 +137,10 @@ fun HomeScreen(
                     )
                 }
 
-                // 2. **رفع ایراد ساختاری: استفاده از chunked(2) برای Grid**
-                // این، StatCardها را در ردیف‌های دو تایی نمایش می‌دهد.
                 items(gridCards.chunked(2)) { rowItems ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         rowItems.forEach { card ->
                             StatCard(
@@ -155,8 +150,8 @@ fun HomeScreen(
                                 color = card.color,
                                 onClick = card.onClick,
                                 modifier = Modifier
-                                    .weight(1f) // 50% عرض
-                                    .height(180.dp) // ارتفاع فیکس
+                                    .weight(1f)
+                                    .height(180.dp)
                             )
                         }
                     }
@@ -265,7 +260,7 @@ fun AllWords(modifier: Modifier = Modifier ,
                 alpha = 0.08f ,
             )
 
-            // محتوای اصلی
+
             Column(
                 verticalArrangement = Arrangement.Center
             ){
@@ -289,9 +284,6 @@ fun AllWords(modifier: Modifier = Modifier ,
         }
     }
 }
-
-
-// **کلاس داده برای دسته‌بندی‌ها**
 data class CategoryItem(
     @StringRes val titleRes: Int,
     @StringRes val descriptionRes: Int,

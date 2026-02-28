@@ -1,4 +1,4 @@
-package com.example.mydictionary.ui.wordlist
+package com.example.mydictionary.ui.excelwords
 
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -67,7 +67,6 @@ fun ExcelWordListScreen(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
             uri?.let {
-                // ****** 👇 اینجا خطای شما رفع می‌شود 👇 ******
                 // 1. دریافت پرچم‌های دسترسی از Intent
                 val flag = Intent.FLAG_GRANT_READ_URI_PERMISSION
 
@@ -105,7 +104,6 @@ fun ExcelWordListScreen(
                     shape = MaterialTheme.shapes.small
                 ) {
                     Text(
-                        // نام دکمه را به "Import" تغییر دهید تا واضح‌تر باشد
                         text = "Import",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold)
@@ -114,7 +112,7 @@ fun ExcelWordListScreen(
         ) { innerPadding ->
             WordListBody(
                 wordsList = ExcelUiState.words,
-                contentPadding = innerPadding,  // درست شد
+                contentPadding = innerPadding,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -125,7 +123,7 @@ fun ExcelWordListScreen(
 private fun WordListBody(
     wordsList: List<Word>,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(0.dp)  // درست شد
+    contentPadding: PaddingValues = PaddingValues(0.dp)
 )
 {
     Column(
@@ -187,12 +185,12 @@ private fun DictionaryWord(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = word.english,        // درست شد
+                text = word.english,
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = word.persian,        // درست شد
+                text = word.persian,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f)
             )
@@ -203,7 +201,7 @@ private fun DictionaryWord(
 @Preview(showBackground = true)
 @Composable
 fun ExcelWordsScreenPreview() {
-    MyDictionaryTheme {  // درست شد
+    MyDictionaryTheme {
         ExcelWordListScreen(
             excelWordsViewModel = viewModel(),
             navigateToExcel = {},

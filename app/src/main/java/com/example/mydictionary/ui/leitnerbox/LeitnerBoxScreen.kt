@@ -1,4 +1,4 @@
-package com.example.mydictionary.ui.wordlist
+package com.example.mydictionary.ui.leitnerbox
 
 import android.content.Intent
 import android.net.Uri
@@ -230,7 +230,7 @@ private fun CartLayout(
                     onClick = {onDontKnow(word)},
                     modifier = Modifier
                         .weight(1f)
-                        .height(32.dp),
+                        .height(48.dp),
                     shape = MaterialTheme.shapes.small,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                 ) {
@@ -245,7 +245,7 @@ private fun CartLayout(
                     onClick = {onKnow(word)},
                     modifier = Modifier
                         .weight(1f)
-                        .height(32.dp),
+                        .height(48.dp),
                     shape = MaterialTheme.shapes.small,
                      contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                ) {
@@ -365,7 +365,7 @@ private fun CartLayoutReview(
                     onClick = {onDontKnow(word)},
                     modifier = Modifier
                         .weight(1f)
-                        .height(32.dp),
+                        .height(48.dp),
                     shape = MaterialTheme.shapes.small,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                 ) {
@@ -379,7 +379,7 @@ private fun CartLayoutReview(
                     onClick = {onKnow(word)},
                     modifier = Modifier
                         .weight(1f)
-                        .height(32.dp),
+                        .height(48.dp),
                     shape = MaterialTheme.shapes.small,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                 ) {

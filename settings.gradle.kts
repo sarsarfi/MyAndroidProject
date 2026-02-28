@@ -1,10 +1,9 @@
 pluginManagement {
     repositories {
-        // 👈 بلوک content حذف شد تا دسترسی کامل به پلاگین KSP برقرار شود
         google()
-
         mavenCentral()
         gradlePluginPortal()
+        maven("https://jitpack.io") //تقویم فارسی
     }
 }
 dependencyResolutionManagement {
@@ -12,6 +11,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven("https://jitpack.io")
     }
 }
 

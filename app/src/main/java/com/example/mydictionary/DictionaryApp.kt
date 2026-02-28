@@ -31,7 +31,6 @@ fun DictionaryApp(navController: NavController = rememberNavController()){
 fun DictionaryTopAppBar(
     title: String,
     canNavigateBack: Boolean,
-    modifier: Modifier = Modifier,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     navigateUp: () -> Unit = {}
 ) {

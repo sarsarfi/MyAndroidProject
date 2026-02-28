@@ -6,12 +6,12 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.mydictionary.DictionaryApplication
 import com.example.mydictionary.ui.addword.AddWordViewModel
+import com.example.mydictionary.ui.editword.WordEditViewModel
+import com.example.mydictionary.ui.excelwords.ExcelWordsViewModel
+import com.example.mydictionary.ui.leitnerbox.LeitnerBoxViewModel
 import com.example.mydictionary.ui.quiz.QuizViewModel
-import com.example.mydictionary.ui.wordlist.ExcelWordsViewModel
 import com.example.mydictionary.ui.wordlist.WordListViewModel
 import com.example.mydictionary.ui.report.ReportViewModel
-import com.example.mydictionary.ui.wordlist.LeitnerBoxViewModel
-import com.example.mydictionary.ui.wordlist.WordEditViewModel
 
 object AppViewModelProvider {
     val Factory: ViewModelProvider.Factory = viewModelFactory {
@@ -53,7 +53,7 @@ object AppViewModelProvider {
                 ?: throw IllegalStateException("DictionaryApplication is not registered in AndroidManifest.xml")
             val repository = application.container.wordsRepository
 
-            WordEditViewModel( this.createSavedStateHandle(), repository)
+            WordEditViewModel(this.createSavedStateHandle(), repository)
         }
 
         initializer {

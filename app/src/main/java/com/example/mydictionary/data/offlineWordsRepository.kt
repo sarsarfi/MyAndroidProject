@@ -9,9 +9,8 @@ class offlineWordsRepository(private val wordDao: WordDao) : WordsRepository {
 
     override fun getWordDictionary(id: Long): Flow<Word?> = wordDao.getWord(id)
 
-    override suspend fun insertWord(word: Word) = wordDao.insert(mutableListOf(word))
+    override suspend fun insertWord(word: Word) = wordDao.insert(word)
 
-    // ✅ اضافه کردن متد برای درج چند کلمه‌ای
     override suspend fun insertWords(words: List<Word>) = wordDao.insertAll(words.toMutableList())
 
     override suspend fun updateWord(word: Word) = wordDao.update(word)

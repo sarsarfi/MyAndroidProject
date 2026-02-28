@@ -1,8 +1,8 @@
 package com.example.mydictionary.data
 
-// این یک کلاس معمولی است و @Entity ندارد چون جدول نیست
+//virtual table
 data class WordReport(
-    val englishWord: String, // از جدول Word می‌آید
-    val correctCount: Int,   // از جدول GameState می‌آید
-    val wrongCount: Int      // از جدول GameState می‌آید
+    val englishWord: String, // from Word Entity
+    val correctCount: Int,   // from GameState Entity
+    val wrongCount: Int      // from GameState Entity
 )

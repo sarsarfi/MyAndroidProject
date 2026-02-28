@@ -1,4 +1,4 @@
-package com.example.mydictionary.ui.wordlist
+package com.example.mydictionary.ui.editword
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

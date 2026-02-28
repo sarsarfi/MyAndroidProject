@@ -1,4 +1,4 @@
-package com.example.mydictionary.ui.wordlist
+package com.example.mydictionary.ui.editword
 
 import WordsRepository
 import androidx.lifecycle.SavedStateHandle
@@ -41,19 +41,20 @@ class WordEditViewModel(
 
     val uiState: StateFlow<WordUiState> = _uiState.asStateFlow()
 
-    private val wordId: Int = checkNotNull(savedStateHandle[WordEditDestination.wordIdArg])
+    private
+
+    val wordId: Int = checkNotNull(savedStateHandle[WordEditDestination.wordIdArg]) //get word id from navigation to access one word in data base
 
     init {
         viewModelScope.launch {
-            // ۱. خواندن کلمه از دیتابیس (به صورت Flow)
+            // read word with id from data base
             wordsRepository.getWordDictionary(wordId.toLong())
                 .filterNotNull()
-                .first() // گرفتن اولین مقدار موجود
+                .first() // get first
                 .let { word ->
-                    // ۲. تبدیل کلمه دیتابیس به وضعیت UI
                     _uiState.value = WordUiState(
                         wordDetails = word.toWordDetails(),
-                        isEntryValid = true // چون کلمه از قبل وجود دارد، معتبر است
+                        isEntryValid = true
                     )
                 }
         }
@@ -79,3 +80,4 @@ class WordEditViewModel(
         }
     }
 }
+

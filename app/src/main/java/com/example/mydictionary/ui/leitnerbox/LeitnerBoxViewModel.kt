@@ -1,4 +1,4 @@
-package com.example.mydictionary.ui.wordlist
+package com.example.mydictionary.ui.leitnerbox
 
 import WordsRepository
 import android.content.Context
@@ -15,7 +15,10 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.TextToSpeech.OnInitListener
 import java.util.Locale
 
-class LeitnerBoxViewModel(private val wordsRepository: WordsRepository) : ViewModel() , OnInitListener {
+class LeitnerBoxViewModel(
+    private val wordsRepository: WordsRepository ,
+    private val nowProvider : () -> Long = {System.currentTimeMillis()}
+) : ViewModel() , OnInitListener {
 
     private var tts : TextToSpeech? = null
     private var isTtsInitialized = false
@@ -56,15 +59,14 @@ class LeitnerBoxViewModel(private val wordsRepository: WordsRepository) : ViewMo
         private const val TIMEOUT_MILLIS = 5_000L
     }
 
-    // فواصل زمانی مرور برای هر جعبه (بر حسب میلی‌ثانیه)
     private val BOX_INTERVALS = mapOf(
-        2 to 1L * 24 * 60 * 60 * 1000L,  // 1 روز
-        3 to 3L * 24 * 60 * 60 * 1000L,  // 3 روز
-        4 to 7L * 24 * 60 * 60 * 1000L, // 7 روز
-        5 to 14L * 24 * 60 * 60 * 1000L  // 14 روز
+        1 to 0L,//immediately
+        2 to 1L * 24 * 60 * 60 * 1000L,  // 1
+        3 to 3L * 24 * 60 * 60 * 1000L,  // 3
+        4 to 7L * 24 * 60 * 60 * 1000L, // 7
+        5 to 14L * 24 * 60 * 60 * 1000L  // 14
     )
 
-    // کاربر کلمه را بلد شد
     fun markWordAsLearned(word: Word) {
         viewModelScope.launch {
             if (word.id <= 0) return@launch
@@ -73,51 +75,35 @@ class LeitnerBoxViewModel(private val wordsRepository: WordsRepository) : ViewMo
             wordsRepository.updateLeitnerBox(word.id, newBox)
             wordsRepository.updateNextReviewDate(word.id, calculateNextReview(newBox))
 
-            // اگر کلمه اسکیپ شده بود، از high priority خارج شود
             if (word.isSkipped) {
                 wordsRepository.updateSkipStatus(word.id, false)
             }
         }
     }
 
-    // کاربر کلمه را فراموش کرد
+
     fun markWordAsForgotten(word: Word) {
         viewModelScope.launch {
             if (word.id <= 0) return@launch
 
-            // همیشه Box = 1 و مرور فوری
             wordsRepository.updateLeitnerBox(word.id, 1)
             wordsRepository.updateNextReviewDate(word.id, calculateNextReview(1))
 
-            // به عنوان high priority / اسکیپ شده
             wordsRepository.updateSkipStatus(word.id, true)
         }
     }
 
-    private fun calculateNextReview(boxId: Int): Long {
-        return if (boxId == 1) {
-            System.currentTimeMillis()
-        } else {
-            val interval = BOX_INTERVALS[boxId]
-                ?: error("Invalid boxId: $boxId")
-            System.currentTimeMillis() + interval
-        }
+     fun calculateNextReview(boxId: Int , now : Long = nowProvider()): Long {
+        return if (boxId == 1) now else now + BOX_INTERVALS[boxId]!!
     }
 
-
-    // StateFlow برای UI
+    //receive data flow from repository
     val uiState: StateFlow<LeitnerUiState> =
-        wordsRepository.getAllWordForReview(System.currentTimeMillis())
+        wordsRepository.getAllWordForReview(nowProvider())
             .combine(wordsRepository.getAllSkippedWords()) { reviewWords, skippedWords ->
-                // اولویت‌بندی:
-                val highPriorityWords = reviewWords.filter { it.isSkipped }
-                val normalPriorityWords = reviewWords.filter { !it.isSkipped }
-
                 LeitnerUiState(
-                    allWords = reviewWords,
-                    highPriorityWords = highPriorityWords,
-                    normalPriorityWords = normalPriorityWords,
-                    allSkippedWords = skippedWords
+                    highPriorityWords = skippedWords,
+                    normalPriorityWords = reviewWords.filter { !it.isSkipped },
                 )
             }
             .stateIn(
@@ -126,10 +112,34 @@ class LeitnerBoxViewModel(private val wordsRepository: WordsRepository) : ViewMo
                 initialValue = LeitnerUiState()
             )
 
-    // انتخاب کلمه بعدی برای نمایش
+    // select next word to show (with priority)
+    private var lastShownWordId: Int? = null
+
     fun getNextWordToReview(uiState: LeitnerUiState): Word? {
-        // اول high priority، بعد normal
-        return uiState.highPriorityWords.firstOrNull()
+
+        // skipped words
+        val skipped = uiState.highPriorityWords
+
+        // normal words
+        val normal = uiState.normalPriorityWords
+
+        // combine skipped and normal words
+        val orderedList = (skipped + normal)
+            .distinctBy { it.id }   // جلوگیری از duplicate
+
+        if (orderedList.isEmpty()) return null
+
+        // delete last shown word from list
+        val filtered = orderedList.filter { it.id != lastShownWordId }
+
+        val nextWord = when {
+            filtered.isNotEmpty() -> filtered.first()
+            else -> orderedList.first()
+        }
+
+        lastShownWordId = nextWord.id
+
+        return nextWord
     }
 
     private val _meaningWord = MutableStateFlow(false)
@@ -146,10 +156,7 @@ class LeitnerBoxViewModel(private val wordsRepository: WordsRepository) : ViewMo
 
 }
 
-// State با اولویت‌بندی
 data class LeitnerUiState(
-    val allWords: List<Word> = emptyList(),
-    val highPriorityWords: List<Word> = emptyList(), // کلمات اسکیپ شده - اولویت بالا
-    val normalPriorityWords: List<Word> = emptyList(), // کلمات عادی - اولویت پایین
-    val allSkippedWords: List<Word> = emptyList()
+    val highPriorityWords: List<Word> = emptyList(), // skipped words
+    val normalPriorityWords: List<Word> = emptyList(), // normal words for review
 )
