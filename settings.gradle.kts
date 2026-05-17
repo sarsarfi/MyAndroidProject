@@ -3,7 +3,6 @@ pluginManagement {
         google()
         mavenCentral()
         gradlePluginPortal()
-        maven("https://jitpack.io") //تقویم فارسی
     }
 }
 dependencyResolutionManagement {
@@ -11,10 +10,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven("https://jitpack.io")
+        maven { url = uri("https://jitpack.io")}
     }
 }
-
-rootProject.name = "MyDictionary"
+rootProject.name = "MyDictionary2"
 include(":app")
- 

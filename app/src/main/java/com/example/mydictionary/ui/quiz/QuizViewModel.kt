@@ -18,6 +18,7 @@ import com.example.mydictionary.data.GameStateRepository
 import kotlinx.coroutines.delay
 import java.util.Locale
 
+// 🛠️ اصلاح تعریف فیلدها در این بخش برای جلوگیری از ارور کامپایلر کاتلین
 data class QuizUiState(
     val currentWord: String = "",
     val inputUserGuess: String = "",
@@ -34,37 +35,31 @@ data class WordListUiState(val wordList: List<Word> = listOf())
 private const val SCORE_QUIZ = 20
 private const val WORD_COUNT_QUIZ = 10
 
-class QuizViewModel(private val wordsRepository: WordsRepository ,
+class QuizViewModel(
+    private val wordsRepository: WordsRepository,
     private val gameStateRepository: GameStateRepository
-) : ViewModel() , OnInitListener {
+) : ViewModel(), OnInitListener {
 
-    // Add pronunciation logic
     private var tts: TextToSpeech? = null
     var isTtsInitialized = false
 
     fun initializeTts(context: Context) {
-        if(tts == null){
-            tts = TextToSpeech(context.applicationContext , this)
+        if (tts == null) {
+            tts = TextToSpeech(context.applicationContext, this)
         }
     }
 
-    override fun onInit(status : Int) {
-        if (status == TextToSpeech.SUCCESS){
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
             val result = tts?.setLanguage(Locale.ENGLISH)
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED){
-                isTtsInitialized = false
-            }else{
-                isTtsInitialized = true
-            }
+            isTtsInitialized = !(result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED)
         }
     }
 
     fun speakWord(word: String) {
-
         if (isTtsInitialized) {
             tts?.speak(word, TextToSpeech.QUEUE_FLUSH, null, null)
         }
-
     }
 
     override fun onCleared() {
@@ -74,11 +69,8 @@ class QuizViewModel(private val wordsRepository: WordsRepository ,
     }
 
     fun speakCurrentCorrectWord() {
-        currentWordObject?.english?.let { word ->
-            speakWord(word)
-        }
+        currentWordObject?.english?.let { speakWord(it) }
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     var randomGenerator: (IntRange) -> Int = { it.random() }
     internal val usedWords: MutableSet<String> = mutableSetOf()
@@ -112,10 +104,7 @@ class QuizViewModel(private val wordsRepository: WordsRepository ,
         val words = allWords.value.wordList
 
         if (words.isEmpty()) {
-            _uiState.value = _uiState.value.copy(
-                currentWord = "No words available",
-                isLoading = false
-            )
+            _uiState.value = _uiState.value.copy(currentWord = "No words available", isLoading = false)
             return
         }
 
@@ -129,52 +118,78 @@ class QuizViewModel(private val wordsRepository: WordsRepository ,
 
         _uiState.value = _uiState.value.copy(isLoading = true)
 
-        val weightWords = availableWords.map { word ->
+        val wordsWithState = availableWords.map { word ->
             val state = gameStateRepository.getGameStateByWordId(word.id)
-            val countWrong = state?.wrongAnswer ?: 0
-            Pair(word, countWrong + 1)
+            Triple(word, state?.wrongAnswer ?: 0, state?.correctAnswer ?: 0)
         }
 
-        val totalWeight = weightWords.sumOf { it.second }
-        val rnd = randomGenerator(1..totalWeight)
+        // اولویت اول: کلماتی که تا حالا اصلاً بازی نشده‌اند
+        val priority1 = wordsWithState.filter { (_, wrong, correct) ->
+            wrong == 0 && correct == 0
+        }.map { it.first }
 
+        // اولویت دوم: کلماتی که تعداد غلط‌ها بیشتر از درست‌هاست
+        val priority2 = wordsWithState.filter { (_, wrong, correct) ->
+            wrong > correct
+        }.map { it.first }
+
+        // اولویت سوم: بقیه کلمات
+        val priority3 = availableWords - priority1.toSet() - priority2.toSet()
+
+        // 🎰 اختصاص هوشمند وزن‌ها (فقط به دسته‌هایی که واقعاً عضو دارند)
+        val weightedList = mutableListOf<Pair<Word, Int>>()
+
+        if (priority1.isNotEmpty()) priority1.forEach { weightedList.add(it to 70) }
+        if (priority2.isNotEmpty()) priority2.forEach { weightedList.add(it to 20) }
+        if (priority3.isNotEmpty()) priority3.forEach { weightedList.add(it to 10) }
+
+        val totalWeight = weightedList.sumOf { it.second }
+
+        if (totalWeight == 0) {
+            val fallbackWord = availableWords.random()
+            setupSelectedWord(fallbackWord)
+            return
+        }
+
+        val rnd = randomGenerator(1..totalWeight)
         var startLoop = 0
         var selectedWord: Word? = null
 
-        for ((word, weight) in weightWords) {
+        for ((word, weight) in weightedList) {
             startLoop += weight
             if (rnd <= startLoop) {
                 selectedWord = word
-                currentWordObject = word
                 break
             }
         }
 
-        selectedWord?.let {
-            usedWords.add(it.english)
-            val shuffled = shuffleWord(it.english)
+        val finalWord = selectedWord ?: availableWords.firstOrNull()
+        finalWord?.let { setupSelectedWord(it) }
+    }
 
-            _uiState.value = _uiState.value.copy(
-                currentWord = shuffled,
-                currentWordCount = usedWords.size,
-                inputUserGuess = "",
-                isLoading = false,
-                message = "Word ${usedWords.size} of $WORD_COUNT_QUIZ"
-            )
+    private suspend fun setupSelectedWord(word: Word) {
+        currentWordObject = word
+        usedWords.add(word.english)
+        val shuffled = shuffleWord(word.english)
 
-            delay(50)
-            speakWord(it.english)
-        }
+        _uiState.value = _uiState.value.copy(
+            currentWord = shuffled,
+            currentWordCount = usedWords.size,
+            inputUserGuess = "",
+            isLoading = false,
+            message = "Word ${usedWords.size} of $WORD_COUNT_QUIZ"
+        )
+
+        delay(50)
+        speakWord(word.english)
     }
 
     private fun shuffleWord(word: String): String {
         if (word.length <= 1) return word
-
         val chars = word.toCharArray()
         do {
             chars.shuffle()
         } while (String(chars) == word && word.length > 1)
-
         return String(chars)
     }
 
@@ -226,7 +241,7 @@ class QuizViewModel(private val wordsRepository: WordsRepository ,
                 inputUserGuess = "",
                 message = "Correct! +$SCORE_QUIZ points"
             )
-            viewModelScope.launch {  wordRandom() }
+            viewModelScope.launch { wordRandom() }
         }
     }
 
@@ -235,13 +250,9 @@ class QuizViewModel(private val wordsRepository: WordsRepository ,
         val wordId = word.id
 
         viewModelScope.launch {
-
-            // update state (the word)
             gameStateRepository.updateStats(wordId, false)
+            delay(200)
 
-            kotlinx.coroutines.delay(200)
-
-            // ۴. خواندن مستقیم از دیتابیس بلافاصله بعد از ذخیره
             val checkData = gameStateRepository.getGameStateByWordId(wordId)
             if (checkData == null) {
                 android.util.Log.e("QUIZ_SAVE", "FAILED! No record found in GameState for ID: $wordId")
@@ -260,8 +271,7 @@ class QuizViewModel(private val wordsRepository: WordsRepository ,
         _uiState.value = QuizUiState(isLoading = true)
 
         viewModelScope.launch {
-            kotlinx.coroutines.delay(300) // delay to load data
-
+            delay(300)
             val words = allWords.value.wordList
             if (words.isNotEmpty()) {
                 _uiState.value = _uiState.value.copy(isLoading = false)

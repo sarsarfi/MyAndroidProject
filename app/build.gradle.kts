@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+
 android {
     namespace = "com.example.mydictionary"
     compileSdk = 34
@@ -59,12 +60,18 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation("androidx.compose.material:material-icons-extended")
 
+
+    //adaptive screen size
+    implementation("androidx.compose.material3:material3-window-size-class:1.2.1")
+
+
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit.junit)
     ksp(libs.androidx.room.compiler)
 
+    //apache poi
     implementation("org.apache.poi:poi:5.2.3")
     implementation("org.apache.poi:poi-ooxml:5.2.3")
     implementation("org.apache.xmlbeans:xmlbeans:5.1.1")
@@ -79,6 +86,14 @@ dependencies {
 
     //PersianCalendar
     implementation("com.github.samanzamani:PersianDate:1.6.0")
+
+
+    //jetpack splash screen
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
+    //persian date
+    implementation("com.github.samanzamani:PersianDate:1.6.0")
+    
 
 
     androidTestImplementation(libs.androidx.junit)
