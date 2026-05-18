@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
@@ -38,15 +40,16 @@ import com.example.mydictionary.DictionaryTopAppBar
 import com.example.mydictionary.R
 import com.example.mydictionary.data.Word
 import com.example.mydictionary.ui.AppViewModelProvider
+import com.example.mydictionary.ui.adaptive.DeviceType
+import com.example.mydictionary.ui.adaptive.rememberDeviceType
 import com.example.mydictionary.ui.navigation.NavigationDestination
 import com.example.mydictionary.ui.theme.MyDictionaryTheme
 
-object ExcelWordsScreenDestination : NavigationDestination{
-
+object ExcelWordsScreenDestination : NavigationDestination {
     override val route: String = "ExcelWordsScreen"
-
     override val titleRes: Int = R.string.list_words_excel
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExcelWordListScreen(
@@ -56,26 +59,18 @@ fun ExcelWordListScreen(
     modifier: Modifier = Modifier,
 ) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-
     val ExcelUiState by excelWordsViewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val deviceType = rememberDeviceType()
 
-    val context = LocalContext.current // ✅ دسترسی به Context برای ViewModel
-
-    // ۱. تعریف لانچر برای انتخاب فایل
+    // لانچر برای انتخاب فایل
     val excelPickerLauncher = rememberLauncherForActivityResult(
-        // قرارداد: درخواست یک سند (فایل)
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
             uri?.let {
-                // 1. دریافت پرچم‌های دسترسی از Intent
                 val flag = Intent.FLAG_GRANT_READ_URI_PERMISSION
-
-                // 2. درخواست مجوز دسترسی پایدار
                 context.contentResolver.takePersistableUriPermission(it, flag)
-
-                // 3. فراخوانی تابع ViewModel
                 excelWordsViewModel.readExcelFile(context, it)
-                // ****** 👆 تا اینجا 👆 ******
             }
         }
     )
@@ -93,26 +88,37 @@ fun ExcelWordListScreen(
             },
             floatingActionButton = {
                 FloatingActionButton(
-                    // ✅ فراخوانی لانچر هنگام کلیک
                     onClick = {
-                        // درخواست فایل‌های اکسل XLSX
                         excelPickerLauncher.launch(arrayOf(
                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            "application/vnd.ms-excel" // برای XLS قدیمی‌تر (اختیاری)
+                            "application/vnd.ms-excel"
                         ))
                     },
-                    shape = MaterialTheme.shapes.small
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.size(
+                        when (deviceType) {
+                            DeviceType.Phone -> 56.dp
+                            DeviceType.Foldable -> 64.dp
+                            DeviceType.Tablet -> 72.dp
+                        }
+                    )
                 ) {
                     Text(
                         text = "Import",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold)
+                        fontSize = when (deviceType) {
+                            DeviceType.Phone -> 12.sp
+                            DeviceType.Foldable -> 14.sp
+                            DeviceType.Tablet -> 16.sp
+                        },
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         ) { innerPadding ->
-            WordListBody(
+            AdaptiveWordListBody(
                 wordsList = ExcelUiState.words,
                 contentPadding = innerPadding,
+                deviceType = deviceType,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -120,12 +126,170 @@ fun ExcelWordListScreen(
 }
 
 @Composable
+private fun AdaptiveWordListBody(
+    wordsList: List<Word>,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    deviceType: DeviceType = DeviceType.Phone
+) {
+    // تعیین پدینگ کناری لیست بر اساس نوع دستگاه
+    val listHorizontalPadding = when (deviceType) {
+        DeviceType.Phone -> 0.dp
+        DeviceType.Foldable -> 16.dp
+        DeviceType.Tablet -> 32.dp
+    }
+
+    // تعیین فاصله بین آیتم‌ها
+    val itemSpacing = when (deviceType) {
+        DeviceType.Phone -> 4.dp
+        DeviceType.Foldable -> 8.dp
+        DeviceType.Tablet -> 12.dp
+    }
+
+    // تعیین سایز فونت برای متن خالی
+    val emptyTextFontSize = when (deviceType) {
+        DeviceType.Phone -> 16.sp
+        DeviceType.Foldable -> 20.sp
+        DeviceType.Tablet -> 24.sp
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+    ) {
+        if (wordsList.isEmpty()) {
+            Text(
+                text = stringResource(R.string.empity_list_excel),
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = emptyTextFontSize,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(contentPadding)
+            )
+        } else {
+            AdaptiveListWords(
+                wordsList = wordsList,
+                contentPadding = PaddingValues(
+                    horizontal = listHorizontalPadding,
+                    vertical = 8.dp
+                ),
+                deviceType = deviceType,
+                itemSpacing = itemSpacing,
+                modifier = modifier
+            )
+        }
+    }
+}
+
+@Composable
+private fun AdaptiveListWords(
+    wordsList: List<Word>,
+    contentPadding: PaddingValues,
+    deviceType: DeviceType,
+    itemSpacing: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = contentPadding,
+        verticalArrangement = Arrangement.spacedBy(itemSpacing)
+    ) {
+        items(items = wordsList) { item ->
+            AdaptiveDictionaryWord(
+                word = item,
+                deviceType = deviceType,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+private fun AdaptiveDictionaryWord(
+    word: Word,
+    deviceType: DeviceType,
+    modifier: Modifier = Modifier
+) {
+    // تعیین سایز فونت‌ها بر اساس نوع دستگاه
+    val englishFontSize = when (deviceType) {
+        DeviceType.Phone -> 16.sp
+        DeviceType.Foldable -> 18.sp
+        DeviceType.Tablet -> 20.sp
+    }
+
+    val persianFontSize = when (deviceType) {
+        DeviceType.Phone -> 14.sp
+        DeviceType.Foldable -> 16.sp
+        DeviceType.Tablet -> 18.sp
+    }
+
+    // تعیین پدینگ داخلی کارت
+    val cardHorizontalPadding = when (deviceType) {
+        DeviceType.Phone -> 20.dp
+        DeviceType.Foldable -> 24.dp
+        DeviceType.Tablet -> 32.dp
+    }
+
+    val cardVerticalPadding = when (deviceType) {
+        DeviceType.Phone -> 10.dp
+        DeviceType.Foldable -> 12.dp
+        DeviceType.Tablet -> 16.dp
+    }
+
+    // تعیین ارتفاع کارت
+    val cardHeight = when (deviceType) {
+        DeviceType.Phone -> null  // ارتفاع خودکار
+        DeviceType.Foldable -> 64.dp
+        DeviceType.Tablet -> 72.dp
+    }
+
+    // تعیین سایه کارت
+    val elevation = when (deviceType) {
+        DeviceType.Phone -> 2.dp
+        DeviceType.Foldable -> 3.dp
+        DeviceType.Tablet -> 4.dp
+    }
+
+    Card(
+        modifier = modifier
+            .then(if (cardHeight != null) Modifier.height(cardHeight) else Modifier),
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
+        shape = MaterialTheme.shapes.small,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = cardHorizontalPadding, vertical = cardVerticalPadding)
+                .fillMaxSize(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = word.english,
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = englishFontSize,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = word.persian,
+                style = MaterialTheme.typography.titleMedium,
+                fontSize = persianFontSize,
+                textAlign = TextAlign.End,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+// نگه داشتن کدهای قدیمی برای Preview
+@Composable
 private fun WordListBody(
     wordsList: List<Word>,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp)
-)
-{
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -149,7 +313,7 @@ private fun WordListBody(
 
 @Composable
 private fun ListWords(
-    wordsList : List<Word> ,
+    wordsList: List<Word>,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier
 ) {
@@ -198,7 +362,9 @@ private fun DictionaryWord(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = 360, heightDp = 640)
+@Preview(showBackground = true, widthDp = 600, heightDp = 800)
+@Preview(showBackground = true, widthDp = 840, heightDp = 1000)
 @Composable
 fun ExcelWordsScreenPreview() {
     MyDictionaryTheme {
@@ -210,13 +376,15 @@ fun ExcelWordsScreenPreview() {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = 360, heightDp = 640)
+@Preview(showBackground = true, widthDp = 600, heightDp = 800)
+@Preview(showBackground = true, widthDp = 840, heightDp = 1000)
 @Composable
 fun EmptyListPreview() {
     MyDictionaryTheme {
         ExcelWordListScreen(
             navigateToExcel = {},
-            navigateBack = {} ,
+            navigateBack = {},
         )
     }
 }
