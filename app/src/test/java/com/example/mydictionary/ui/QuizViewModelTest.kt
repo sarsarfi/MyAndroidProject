@@ -17,7 +17,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import kotlin.test.Test
-import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class QuizViewModelTest {
@@ -28,7 +28,6 @@ class QuizViewModelTest {
     private val mockWordRepo = mockk<WordsRepository>(relaxed = true)
     private val mockStateRepo = mockk<GameStateRepository>(relaxed = true)
 
-    // یک Flow کنترل‌پذیر می‌سازیم که اولش خالی است تا بلاک init پیش‌دستی نکند!
     private val wordsFlow = MutableStateFlow<List<Word>>(emptyList())
 
     @Before
@@ -37,43 +36,45 @@ class QuizViewModelTest {
     }
 
     @Test
-    fun wordRandom_Select_Hard_words() = runTest {
-        // ۱. تعیین وضعیت کلمات در دیتابیس
-        coEvery { mockStateRepo.getGameStateByWordId(1) } returns null
+    fun wordRandom_WhenAllCategoriesExist_ShouldBuildCorrectTotalWeight() = runTest {
 
-        val hardState = mockk<GameState> {
-            every { wrongAnswer } returns 5
+        coEvery { mockStateRepo.getGameStateByWordId(1) } returns null // دسته اول: وزن ۶۰
+        coEvery { mockStateRepo.getGameStateByWordId(2) } returns mockk<GameState> {
+            every { wrongAnswer } returns 3
             every { correctAnswer } returns 1
         }
-        coEvery { mockStateRepo.getGameStateByWordId(2) } returns hardState
+        coEvery { mockStateRepo.getGameStateByWordId(3) } returns mockk<GameState> {
+            every { wrongAnswer } returns 0
+            every { correctAnswer } returns 4
+        }
 
-        // ۲. ساخت ViewModel (چون wordsFlow فعلاً خالی است، بلاک init کاری انجام نمی‌دهد و منتظر می‌ماند)
         val viewModel = QuizViewModel(mockWordRepo, mockStateRepo)
 
-        // ۳. قفل کردن عدد رندوم روی ۷۵ (محدوده کلمات ضعیف) قبل از فرستادن دیتا
-        viewModel.randomGenerator = { _ -> 75 }
+        viewModel.randomGenerator = { _ -> 95 }
 
-        // ۴. فعال‌سازی شنونده‌ی Flow در تست
         val collectJob = launch { viewModel.allWords.collect { } }
 
-        // ۵. حالا که همه چیز آماده است، کلمات را به دیتابیس تزریق می‌کنیم!
         val wordList = listOf(
             Word(1, "fox", "روباه"),
-            Word(2, "cat", "گربه")
+            Word(2, "cat", "گربه"),
+            Word(3, "dog", "سگ")
         )
-        wordsFlow.value = wordList // با این خط، بلاک init تازه الان فعال می‌شود و عدد رندوم ۷۵ را می‌بیند!
+        wordsFlow.value = wordList
 
-        // منتظر می‌مانیم تا اولین لیست غیرخالی پردازش شود
         viewModel.allWords.first { it.wordList.isNotEmpty() }
         advanceUntilIdle()
 
-        // ۶. بررسی وضعیت نهایی
-        val uiState = viewModel.uiState.value
+        val finalUiState = viewModel.uiState.first { it.currentWord.isNotEmpty() }
 
-        // آیا کلمه‌ی به هم ریخته شده متعلق به cat است؟
-        val isCat = uiState.currentWord.any { it == 'c' || it == 'a' || it == 't' }
+        val expectedWord = "dog"
+        val actualShuffledWord = finalUiState.currentWord
 
-        assertTrue(isCat, "Expected the hard word (cat) to be selected, but got: ${uiState.currentWord}")
+
+        assertEquals(
+            expectedWord.toList().sorted(),
+            actualShuffledWord.toList().sorted(),
+            "The selected word should be '$expectedWord', but found '$actualShuffledWord'"
+        )
 
         collectJob.cancel()
     }

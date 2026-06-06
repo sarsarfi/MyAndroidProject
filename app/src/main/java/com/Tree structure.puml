@@ -1,0 +1,22 @@
+@startmindmap
+* Android
+**_ app
+***_ manifests
+***_ kotlin+javascript
+****_ com
+*****_ example
+******_ mydictionary
+*******_ data
+*******_ ui
+*******_ DictionaryApp.kt
+*******_ DictionaryApplication
+*******_ MainActivity
+*******_ Tree structure.puml
+***_ com (androidTest)
+***_ com (test)
+***_ java (generated)
+**_ res
+**_ res (generated)
+**_ resources
+*_ Gradle Scripts
+@endmindmap

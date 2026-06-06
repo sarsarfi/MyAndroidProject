@@ -139,8 +139,8 @@ class QuizViewModel(
         // 🎰 اختصاص هوشمند وزن‌ها (فقط به دسته‌هایی که واقعاً عضو دارند)
         val weightedList = mutableListOf<Pair<Word, Int>>()
 
-        if (priority1.isNotEmpty()) priority1.forEach { weightedList.add(it to 70) }
-        if (priority2.isNotEmpty()) priority2.forEach { weightedList.add(it to 20) }
+        if (priority1.isNotEmpty()) priority1.forEach { weightedList.add(it to 60) }
+        if (priority2.isNotEmpty()) priority2.forEach { weightedList.add(it to 30) }
         if (priority3.isNotEmpty()) priority3.forEach { weightedList.add(it to 10) }
 
         val totalWeight = weightedList.sumOf { it.second }
@@ -184,7 +184,7 @@ class QuizViewModel(
         speakWord(word.english)
     }
 
-    private fun shuffleWord(word: String): String {
+     fun shuffleWord(word: String): String {
         if (word.length <= 1) return word
         val chars = word.toCharArray()
         do {

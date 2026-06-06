@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,15 +58,14 @@ object ExcelWordsScreenDestination : NavigationDestination {
 fun ExcelWordListScreen(
     navigateToExcel: () -> Unit,
     navigateBack: () -> Unit,
-    excelWordsViewModel: ExcelWordsViewModel = viewModel(factory = AppViewModelProvider.Factory),
     modifier: Modifier = Modifier,
+    excelWordsViewModel: ExcelWordsViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-    val ExcelUiState by excelWordsViewModel.uiState.collectAsState()
+    val excelUiState by excelWordsViewModel.uiState.collectAsState()
     val context = LocalContext.current
     val deviceType = rememberDeviceType()
 
-    // لانچر برای انتخاب فایل
     val excelPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
@@ -116,7 +118,7 @@ fun ExcelWordListScreen(
             }
         ) { innerPadding ->
             AdaptiveWordListBody(
-                wordsList = ExcelUiState.words,
+                wordsList = excelUiState.words,
                 contentPadding = innerPadding,
                 deviceType = deviceType,
                 modifier = Modifier.fillMaxSize()
@@ -132,21 +134,18 @@ private fun AdaptiveWordListBody(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     deviceType: DeviceType = DeviceType.Phone
 ) {
-    // تعیین پدینگ کناری لیست بر اساس نوع دستگاه
     val listHorizontalPadding = when (deviceType) {
-        DeviceType.Phone -> 0.dp
-        DeviceType.Foldable -> 16.dp
+        DeviceType.Phone -> 16.dp // اضافه کردن پدینگ برای گوشی جهت زیبایی و عدم چسبیدن به لبه‌ها
+        DeviceType.Foldable -> 24.dp
         DeviceType.Tablet -> 32.dp
     }
 
-    // تعیین فاصله بین آیتم‌ها
     val itemSpacing = when (deviceType) {
-        DeviceType.Phone -> 4.dp
-        DeviceType.Foldable -> 8.dp
-        DeviceType.Tablet -> 12.dp
+        DeviceType.Phone -> 8.dp
+        DeviceType.Foldable -> 10.dp
+        DeviceType.Tablet -> 14.dp
     }
 
-    // تعیین سایز فونت برای متن خالی
     val emptyTextFontSize = when (deviceType) {
         DeviceType.Phone -> 16.sp
         DeviceType.Foldable -> 20.sp
@@ -169,12 +168,14 @@ private fun AdaptiveWordListBody(
             AdaptiveListWords(
                 wordsList = wordsList,
                 contentPadding = PaddingValues(
-                    horizontal = listHorizontalPadding,
-                    vertical = 8.dp
+                    start = contentPadding.calculateStartPadding(LayoutDirection.Ltr) + listHorizontalPadding,
+                    end = contentPadding.calculateEndPadding(LayoutDirection.Ltr) + listHorizontalPadding,
+                    top = contentPadding.calculateTopPadding() + 8.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 80.dp // پدینگ برای نرفتن زیر FAB
                 ),
                 deviceType = deviceType,
                 itemSpacing = itemSpacing,
-                modifier = modifier
+                modifier = Modifier.fillMaxSize()
             )
         }
     }
@@ -193,7 +194,11 @@ private fun AdaptiveListWords(
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(itemSpacing)
     ) {
-        items(items = wordsList) { item ->
+        items(
+            count = wordsList.size,
+            key = { index -> index }
+        ) { index ->
+            val item = wordsList[index]
             AdaptiveDictionaryWord(
                 word = item,
                 deviceType = deviceType,
@@ -202,14 +207,12 @@ private fun AdaptiveListWords(
         }
     }
 }
-
 @Composable
 private fun AdaptiveDictionaryWord(
     word: Word,
     deviceType: DeviceType,
     modifier: Modifier = Modifier
 ) {
-    // تعیین سایز فونت‌ها بر اساس نوع دستگاه
     val englishFontSize = when (deviceType) {
         DeviceType.Phone -> 16.sp
         DeviceType.Foldable -> 18.sp
@@ -222,7 +225,6 @@ private fun AdaptiveDictionaryWord(
         DeviceType.Tablet -> 18.sp
     }
 
-    // تعیین پدینگ داخلی کارت
     val cardHorizontalPadding = when (deviceType) {
         DeviceType.Phone -> 20.dp
         DeviceType.Foldable -> 24.dp
@@ -230,19 +232,11 @@ private fun AdaptiveDictionaryWord(
     }
 
     val cardVerticalPadding = when (deviceType) {
-        DeviceType.Phone -> 10.dp
-        DeviceType.Foldable -> 12.dp
-        DeviceType.Tablet -> 16.dp
+        DeviceType.Phone -> 14.dp
+        DeviceType.Foldable -> 16.dp
+        DeviceType.Tablet -> 20.dp
     }
 
-    // تعیین ارتفاع کارت
-    val cardHeight = when (deviceType) {
-        DeviceType.Phone -> null  // ارتفاع خودکار
-        DeviceType.Foldable -> 64.dp
-        DeviceType.Tablet -> 72.dp
-    }
-
-    // تعیین سایه کارت
     val elevation = when (deviceType) {
         DeviceType.Phone -> 2.dp
         DeviceType.Foldable -> 3.dp
@@ -250,8 +244,7 @@ private fun AdaptiveDictionaryWord(
     }
 
     Card(
-        modifier = modifier
-            .then(if (cardHeight != null) Modifier.height(cardHeight) else Modifier),
+        modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
         shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(
@@ -261,101 +254,22 @@ private fun AdaptiveDictionaryWord(
         Row(
             modifier = Modifier
                 .padding(horizontal = cardHorizontalPadding, vertical = cardVerticalPadding)
-                .fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = word.english,
-                style = MaterialTheme.typography.titleLarge,
-                fontSize = englishFontSize,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                text = word.persian,
-                style = MaterialTheme.typography.titleMedium,
-                fontSize = persianFontSize,
-                textAlign = TextAlign.End,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-// نگه داشتن کدهای قدیمی برای Preview
-@Composable
-private fun WordListBody(
-    wordsList: List<Word>,
-    modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(0.dp)
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-    ) {
-        if (wordsList.isEmpty()) {
-            Text(
-                text = stringResource(R.string.empity_list_excel),
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(contentPadding)
-            )
-        } else {
-            ListWords(
-                wordsList = wordsList,
-                contentPadding = contentPadding,
-                modifier = modifier
-            )
-        }
-    }
-}
-
-@Composable
-private fun ListWords(
-    wordsList: List<Word>,
-    contentPadding: PaddingValues,
-    modifier: Modifier = Modifier
-) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = contentPadding
-    ) {
-        items(items = wordsList) { item ->
-            DictionaryWord(
-                word = item,
-                modifier = Modifier
-                    .padding(4.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun DictionaryWord(
-    word: Word,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = MaterialTheme.shapes.small
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 10.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = word.english,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.bodyLarge,
+                fontSize = englishFontSize,
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f)
             )
             Text(
                 text = word.persian,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodyMedium,
+                fontSize = persianFontSize,
+                textAlign = TextAlign.End,
                 modifier = Modifier.weight(1f)
             )
         }

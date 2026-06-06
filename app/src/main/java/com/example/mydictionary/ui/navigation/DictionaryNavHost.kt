@@ -1,7 +1,16 @@
 package com.example.mydictionary.ui.navigation
 
+import android.app.Activity
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -25,6 +34,8 @@ import com.example.mydictionary.ui.report.ReportScreen
 import com.example.mydictionary.ui.report.ReportScreenDestination
 import com.example.mydictionary.ui.wordlist.WordListDestination
 import com.example.mydictionary.ui.wordlist.WordListScreen
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun DictionaryNavHostApp(
@@ -37,13 +48,33 @@ fun DictionaryNavHostApp(
         modifier = modifier
     ) {
         composable(HomeDestination.route) {
+            // مدیریت دکمه Back در صفحه اصلی
+            var backPressedOnce by remember { mutableStateOf(false) }
+            val scope = rememberCoroutineScope()
+            val context = LocalContext.current
+
+            BackHandler(enabled = true) {
+                if (backPressedOnce) {
+                    // دفعه دوم: خارج شدن از برنامه
+                    (context as? Activity)?.finish()
+                } else {
+                    // دفعه اول: پیام نشان بده
+                    backPressedOnce = true
+                    Toast.makeText(context, "برای خروج دوباره کلیک کنید", Toast.LENGTH_SHORT).show()
+                    scope.launch {
+                        delay(2000)
+                        backPressedOnce = false
+                    }
+                }
+            }
+
             HomeScreen(
                 onAllWord = { navController.navigate(WordListDestination.route) },
                 onQuiz = { navController.navigate(QuizDestination.route) },
-                onLeitnerBox = { navController.navigate(LeitnerBoxScreenDestination.route) } ,
-                onExcelWord = {navController.navigate(ExcelWordsScreenDestination.route)} ,
-                onAbout = {navController.navigate(ReportScreenDestination.route)},
-                onAddWord = {navController.navigate(AddWordDestination.route)}
+                onLeitnerBox = { navController.navigate(LeitnerBoxScreenDestination.route) },
+                onExcelWord = { navController.navigate(ExcelWordsScreenDestination.route) },
+                onAbout = { navController.navigate(ReportScreenDestination.route) },
+                onAddWord = { navController.navigate(AddWordDestination.route) }
             )
         }
 
