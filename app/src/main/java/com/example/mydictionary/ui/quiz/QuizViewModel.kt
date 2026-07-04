@@ -1,10 +1,14 @@
 package com.example.mydictionary.ui.quiz
 
-import WordsRepository
 import android.content.Context
+import android.speech.tts.TextToSpeech
+import android.speech.tts.TextToSpeech.OnInitListener
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.mydictionary.data.Word
+import com.example.mydictionary.data.entities.Word
+import com.example.mydictionary.data.repository.WordStatsRepository
+import com.example.mydictionary.data.repository.WordsRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -12,13 +16,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import android.speech.tts.TextToSpeech
-import android.speech.tts.TextToSpeech.OnInitListener
-import com.example.mydictionary.data.GameStateRepository
-import kotlinx.coroutines.delay
 import java.util.Locale
 
-// 🛠️ اصلاح تعریف فیلدها در این بخش برای جلوگیری از ارور کامپایلر کاتلین
 data class QuizUiState(
     val currentWord: String = "",
     val inputUserGuess: String = "",
@@ -37,7 +36,7 @@ private const val WORD_COUNT_QUIZ = 10
 
 class QuizViewModel(
     private val wordsRepository: WordsRepository,
-    private val gameStateRepository: GameStateRepository
+    private val wordStatsRepository: WordStatsRepository
 ) : ViewModel(), OnInitListener {
 
     private var tts: TextToSpeech? = null
@@ -119,24 +118,20 @@ class QuizViewModel(
         _uiState.value = _uiState.value.copy(isLoading = true)
 
         val wordsWithState = availableWords.map { word ->
-            val state = gameStateRepository.getGameStateByWordId(word.id)
+            val state = wordStatsRepository.getGameStateByWordId(word.id)
             Triple(word, state?.wrongAnswer ?: 0, state?.correctAnswer ?: 0)
         }
 
-        // اولویت اول: کلماتی که تا حالا اصلاً بازی نشده‌اند
         val priority1 = wordsWithState.filter { (_, wrong, correct) ->
             wrong == 0 && correct == 0
         }.map { it.first }
 
-        // اولویت دوم: کلماتی که تعداد غلط‌ها بیشتر از درست‌هاست
         val priority2 = wordsWithState.filter { (_, wrong, correct) ->
             wrong > correct
         }.map { it.first }
 
-        // اولویت سوم: بقیه کلمات
         val priority3 = availableWords - priority1.toSet() - priority2.toSet()
 
-        // 🎰 اختصاص هوشمند وزن‌ها (فقط به دسته‌هایی که واقعاً عضو دارند)
         val weightedList = mutableListOf<Pair<Word, Int>>()
 
         if (priority1.isNotEmpty()) priority1.forEach { weightedList.add(it to 60) }
@@ -184,7 +179,7 @@ class QuizViewModel(
         speakWord(word.english)
     }
 
-     fun shuffleWord(word: String): String {
+    fun shuffleWord(word: String): String {
         if (word.length <= 1) return word
         val chars = word.toCharArray()
         do {
@@ -219,12 +214,17 @@ class QuizViewModel(
         val wordId = currentWordObject?.id ?: return
 
         viewModelScope.launch {
-            gameStateRepository.updateStats(wordId, true)
-            if (currentWordObject?.isSkipped == true) {
-                wordsRepository.updateSkipStatus(wordId, false)
+            // ۱. ثبت آمار پاسخ صحیح در دیتابیس (بدون هیچ کد مخرب اضافه)
+            wordStatsRepository.updateStats(wordId, true)
+
+            // ۲. اگر کلمه قبلاً در حالت اسکیپ/هشدار بود، وضعیت آن را ریست کن
+            val currentStats = wordStatsRepository.getGameStateByWordId(wordId)
+            if (currentStats?.isSkipped == true) {
+                wordStatsRepository.updateSkipStatus(wordId, false)
             }
         }
 
+        // ۳. محاسبه و به‌روزرسانی امتیاز کوئیز
         val updateScore = _uiState.value.score + SCORE_QUIZ
 
         if (usedWords.size >= WORD_COUNT_QUIZ) {
@@ -241,6 +241,7 @@ class QuizViewModel(
                 inputUserGuess = "",
                 message = "Correct! +$SCORE_QUIZ points"
             )
+            // رفتن به کلمه تصادفی بعدی
             viewModelScope.launch { wordRandom() }
         }
     }
@@ -250,17 +251,16 @@ class QuizViewModel(
         val wordId = word.id
 
         viewModelScope.launch {
-            gameStateRepository.updateStats(wordId, false)
-            delay(200)
+            //  افزایش تعداد پاسخ‌های غلط در آمار بازی/کوئیز
+            wordStatsRepository.updateStats(wordId, false)
 
-            val checkData = gameStateRepository.getGameStateByWordId(wordId)
-            if (checkData == null) {
-                android.util.Log.e("QUIZ_SAVE", "FAILED! No record found in GameState for ID: $wordId")
-            } else {
-                android.util.Log.d("QUIZ_SAVE", "SUCCESS! DB now has -> Correct: ${checkData.correctAnswer}, Wrong: ${checkData.wrongAnswer}")
-            }
+            //  ارسال کلمه به لایتنر ۱ و تنظیم تاریخ مرور برای همین الان
+            // این کار باعث می‌شود کلمه حتماً در کوئری لایتنر باکس بالا بیاید
+            wordStatsRepository.updateLeitnerBox(wordId, 1)
+            wordStatsRepository.updateNextReviewDate(wordId, System.currentTimeMillis())
+            wordStatsRepository.updateSkipStatus(wordId, true) // فعال کردن علامت هشدار (کلمه رد شده)
 
-            wordsRepository.updateSkipStatus(wordId, true)
+            // ۳. رفتن به کلمه تصادفی بعدی در بازی
             wordRandom()
         }
     }

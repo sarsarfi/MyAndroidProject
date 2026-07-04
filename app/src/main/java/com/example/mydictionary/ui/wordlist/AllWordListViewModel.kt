@@ -1,20 +1,24 @@
 package com.example.mydictionary.ui.wordlist
 
-import WordsRepository
 import android.content.Context
+import android.speech.tts.TextToSpeech
+import android.speech.tts.TextToSpeech.OnInitListener
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.mydictionary.data.Word
+import com.example.mydictionary.data.entities.Word
+import com.example.mydictionary.data.repository.WordStatsRepository
+import com.example.mydictionary.data.repository.WordsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import android.speech.tts.TextToSpeech
-import android.speech.tts.TextToSpeech.OnInitListener
 import java.util.Locale
 
-class WordListViewModel(private val wordsRepository: WordsRepository) : ViewModel() , OnInitListener{
+class WordListViewModel(
+    private val wordsRepository: WordsRepository ,
+    private val wordStatsRepository: WordStatsRepository
+    ) : ViewModel() , OnInitListener{
 
     private var tts: TextToSpeech? = null
     private var isTtsInitialized = false
@@ -27,7 +31,7 @@ class WordListViewModel(private val wordsRepository: WordsRepository) : ViewMode
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = tts?.setLanguage(Locale.ENGLISH)
+            val result = tts?.setLanguage(Locale.US)
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 isTtsInitialized = false
             }else{
@@ -59,9 +63,13 @@ class WordListViewModel(private val wordsRepository: WordsRepository) : ViewMode
         private const val TIMEOUT_MILLIS = 5_000L
     }
     val uiState : StateFlow<WordListUiState> = wordsRepository.getAllWordsDictionary()
-        .combine(wordsRepository.getAllSkippedWords()) { allWords, skippedWords ->
+        .combine(wordStatsRepository.getAllSkippedWords()) { allWords, skippedWords ->
             // combine two flow in one ui state
-            WordListUiState(wordsList = allWords , skippedWords = skippedWords)
+            WordListUiState(
+                wordsList = allWords ,
+                skippedWords = skippedWords ,
+                totalWords = allWords.size
+                )
         }
         .stateIn(
             scope = viewModelScope ,
@@ -69,10 +77,10 @@ class WordListViewModel(private val wordsRepository: WordsRepository) : ViewMode
             initialValue = WordListUiState()
         )
 
-
-}
+    }
 
 data class WordListUiState(
     val wordsList : List<Word> = listOf() ,
-    val skippedWords : List<Word> = listOf()
+    val skippedWords : List<Word> = listOf() ,
+    val totalWords : Int = 0
 )

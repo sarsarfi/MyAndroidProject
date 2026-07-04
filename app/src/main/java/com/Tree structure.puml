@@ -7,11 +7,41 @@
 *****_ example
 ******_ mydictionary
 *******_ data
+********_ daos
+*********_ CategoryDao
+*********_ WordDao
+*********_ WordsStateDao
+*********_ WordCategoryCrossRefDaoDao
+********_ entities
+*********_ Entites.kt
+********_ repository
+*********_ WordRepository.kt
+*********_ ...
+*********_ WordsStateRepository.kt
+*********_ OfflineCategoryRepository.kt
+*********_ ...
+*********_ OfflineWordsStateRepository.kt
+********_ DictionaryDatabase.kt
+********_ AppContainer.kt
 *******_ ui
+********_ categoryword
+********_ excelword
+********_ editword
+********_ addword
+********_ home
+********_ adaptive
+********_ leitnerbox
+********_ navigation
+********_ quiz
+********_ report
+********_ theme
+********_ wordlist
+*********_ AllWordListScreen.kt
+*********_ AllWordListViewModel.kt
+********_ AppViewModel.kt
 *******_ DictionaryApp.kt
-*******_ DictionaryApplication
-*******_ MainActivity
-*******_ Tree structure.puml
+*******_ DictionaryApplication.kt
+*******_ MainActivity.kt
 ***_ com (androidTest)
 ***_ com (test)
 ***_ java (generated)

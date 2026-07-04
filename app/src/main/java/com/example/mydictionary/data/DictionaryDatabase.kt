@@ -4,19 +4,28 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.mydictionary.data.dao.WordCategoryCrossRefDao
+import com.example.mydictionary.data.daos.CategoryDao
+import com.example.mydictionary.data.daos.WordDao
+import com.example.mydictionary.data.daos.WordsStateDao
+import com.example.mydictionary.data.entities.Category
+import com.example.mydictionary.data.entities.Word
+import com.example.mydictionary.data.entities.WordCategoryCrossRef
+import com.example.mydictionary.data.entities.WordsState
 
 @Database(
-    entities = [Word::class , GameState::class],
-    version = 10,
+    entities = [Word::class, WordsState::class , Category::class , WordCategoryCrossRef::class],
+    version = 13,
     exportSchema = false
 )
 abstract class DictionaryDatabase : RoomDatabase() {
 
     abstract fun wordDao(): WordDao
-    abstract fun gameStateDao(): GameStateDao
+    abstract fun wordStatsDao(): WordsStateDao
 
+    abstract fun categoryDao(): CategoryDao
+
+    abstract fun wordCategoryCrossRefDao(): WordCategoryCrossRefDao
 
     companion object {
         @Volatile
@@ -25,11 +34,11 @@ abstract class DictionaryDatabase : RoomDatabase() {
         fun getDatabase(context: Context): DictionaryDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(
-                    context,
+                    context.applicationContext,
                     DictionaryDatabase::class.java,
                     "dictionary_database"
                 )
-                    .fallbackToDestructiveMigration() // برای مرحله توسعه
+                    .fallbackToDestructiveMigration() // دیتابیس قدیمی را پاک و با ساختار جدید ورژن x می‌سازد
                     .build()
                     .also { Instance = it }
             }

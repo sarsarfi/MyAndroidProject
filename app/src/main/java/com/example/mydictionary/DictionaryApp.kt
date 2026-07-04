@@ -32,27 +32,34 @@ fun DictionaryTopAppBar(
     title: String,
     canNavigateBack: Boolean,
     scrollBehavior: TopAppBarScrollBehavior? = null,
-    navigateUp: () -> Unit = {}
+    navigateUp: () -> Unit = {} ,
+    modifier: Modifier = Modifier
 ) {
+
         CenterAlignedTopAppBar(
             title =
-                { Text(title,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.displayLarge
-                ) }
-            ,
+                {
+                    Text(
+                        title,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.displayLarge
+                    )
+                },
             scrollBehavior = scrollBehavior,
             navigationIcon = {
                 if (canNavigateBack) {
                     IconButton(onClick = navigateUp) {
                         Icon(
                             imageVector = Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back" ,
+                            tint = MaterialTheme.colorScheme.onBackground ,
                         )
                     }
                 }
-            }
-        )
+            },
+
+            )
 }

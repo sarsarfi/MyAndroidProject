@@ -1,7 +1,7 @@
 package com.example.mydictionary.ui
 
-import WordsRepository
-import com.example.mydictionary.data.GameStateRepository
+import com.example.mydictionary.data.repository.WordsRepository
+import com.example.mydictionary.data.repository.WordStatsRepository
 import com.example.mydictionary.ui.report.ReportViewModel
 import io.mockk.every
 import io.mockk.mockk
@@ -33,8 +33,8 @@ class ReportTest {
             } returns allDatesFlow
         }
 
-    private val gameStateRepository =
-        mockk<GameStateRepository>(relaxed = true)
+    private val wordStatsRepository =
+        mockk<WordStatsRepository>(relaxed = true)
 
     private lateinit var viewModel: ReportViewModel
 
@@ -43,7 +43,7 @@ class ReportTest {
 
         viewModel = ReportViewModel(
             wordsRepository,
-            gameStateRepository
+            wordStatsRepository
         )
     }
 

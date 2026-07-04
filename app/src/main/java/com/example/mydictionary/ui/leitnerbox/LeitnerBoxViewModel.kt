@@ -1,23 +1,24 @@
 package com.example.mydictionary.ui.leitnerbox
 
-import WordsRepository
 import android.content.Context
+import android.speech.tts.TextToSpeech
+import android.speech.tts.TextToSpeech.OnInitListener
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.mydictionary.data.Word
+import com.example.mydictionary.data.entities.Word
+import com.example.mydictionary.data.entities.WordsState
+import com.example.mydictionary.data.repository.WordStatsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import android.speech.tts.TextToSpeech
-import android.speech.tts.TextToSpeech.OnInitListener
 import java.util.Locale
 
 class LeitnerBoxViewModel(
-    private val wordsRepository: WordsRepository ,
-    private val nowProvider : () -> Long = {System.currentTimeMillis()}
+    private val wordStatsRepository: WordStatsRepository,
+    private val nowProvider : () -> Long = { System.currentTimeMillis() }
 ) : ViewModel() , OnInitListener {
 
     private var tts : TextToSpeech? = null
@@ -30,12 +31,10 @@ class LeitnerBoxViewModel(
     }
     override fun onInit(status: Int) {
         if(status == TextToSpeech.SUCCESS){
-
             val result = tts?.setLanguage(Locale.ENGLISH)
-
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED){
                 isTtsInitialized = false
-            }else{
+            } else {
                 isTtsInitialized = true
             }
         }
@@ -54,56 +53,65 @@ class LeitnerBoxViewModel(
         tts = null
     }
 
-
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
     }
 
-    private val BOX_INTERVALS = mapOf(
-        1 to 0L,//immediately
-        2 to 1L * 24 * 60 * 60 * 1000L,  // 1
-        3 to 3L * 24 * 60 * 60 * 1000L,  // 3
-        4 to 7L * 24 * 60 * 60 * 1000L, // 7
-        5 to 14L * 24 * 60 * 60 * 1000L  // 14
+    private val boxIntervals = mapOf(
+        1 to 0L,
+        2 to 1L * 24 * 60 * 60 * 1000L,
+        3 to 3L * 24 * 60 * 60 * 1000L,
+        4 to 7L * 24 * 60 * 60 * 1000L,
+        5 to 14L * 24 * 60 * 60 * 1000L
     )
 
-    fun markWordAsLearned(word: Word) {
+    fun markWordAsLearned(wordState: WordsState) {
         viewModelScope.launch {
-            if (word.id <= 0) return@launch
+            if (wordState.wordId <= 0) return@launch
 
-            val newBox = (word.leitnerBox + 1).coerceAtMost(5)
-            wordsRepository.updateLeitnerBox(word.id, newBox)
-            wordsRepository.updateNextReviewDate(word.id, calculateNextReview(newBox))
+            // ابتدا وضعیت فعلی کلمه رو از دیتابیس می‌گیریم
+            val currentStats = wordStatsRepository.getGameStateByWordId(wordState.wordId)
+            val currentBox = currentStats?.leitnerBox ?: 1
 
-            if (word.isSkipped) {
-                wordsRepository.updateSkipStatus(word.id, false)
-            }
+            // اگر کلمه رو بلد بود، یک جعبه میره جلو (حداکثر تا جعبه ۵)
+            val newBox = (currentBox + 1).coerceAtMost(5)
+            wordStatsRepository.updateLeitnerBox(wordState.wordId, newBox)
+            wordStatsRepository.updateNextReviewDate(wordState.wordId, calculateNextReview(newBox))
+
+            //  چون کلمه رو یاد گرفته، حالا دیگه از حالت رد شده (High Priority) خارج میشه و علامتش پاک میشه
+            wordStatsRepository.updateSkipStatus(wordState.wordId, false)
         }
     }
 
-
-    fun markWordAsForgotten(word: Word) {
+    fun markWordAsForgotten(wordState: WordsState) {
         viewModelScope.launch {
-            if (word.id <= 0) return@launch
+            if (wordState.wordId <= 0) return@launch
 
-            wordsRepository.updateLeitnerBox(word.id, 1)
-            wordsRepository.updateNextReviewDate(word.id, calculateNextReview(1))
+            //  هر وقت دکمه نمیدانم زده شد، کلمه بدون چون و چرا میره/می‌مونه تو جعبه ۱
+            wordStatsRepository.updateLeitnerBox(wordState.wordId, 1)
+            wordStatsRepository.updateNextReviewDate(wordState.wordId, calculateNextReview(1))
 
-            wordsRepository.updateSkipStatus(word.id, true)
+            //  اینجا اون باگ قبلی رو حل کردیم:
+            // چون کاربر کلمه رو بلد نبوده و «نمی‌دانم» رو زده، پس کلمه *همچنان* باید رد شده و با اولویت بالا باقی بمونه (true)
+            // اینطوری علامت هشدار (SMS) روی کارت باقی می‌مونه تا کاربر دوباره و دوباره مروریش کنه.
+            wordStatsRepository.updateSkipStatus(wordState.wordId, true)
         }
     }
 
-     fun calculateNextReview(boxId: Int , now : Long = nowProvider()): Long {
-        return if (boxId == 1) now else now + BOX_INTERVALS[boxId]!!
+    fun calculateNextReview(boxId: Int, now: Long = nowProvider()): Long {
+        val interval = boxIntervals[boxId] ?: 0L
+        return now + interval
     }
 
-    //receive data flow from repository
     val uiState: StateFlow<LeitnerUiState> =
-        wordsRepository.getAllWordForReview(nowProvider())
-            .combine(wordsRepository.getAllSkippedWords()) { reviewWords, skippedWords ->
+        wordStatsRepository.getAllWordForReview(nowProvider())
+            .combine(wordStatsRepository.getAllSkippedWords()) { reviewWords, skippedWords ->
+
+                val skippedIds = skippedWords.map { it.id }.toSet()
+
                 LeitnerUiState(
                     highPriorityWords = skippedWords,
-                    normalPriorityWords = reviewWords.filter { !it.isSkipped },
+                    normalPriorityWords = reviewWords.filter { it.id !in skippedIds },
                 )
             }
             .stateIn(
@@ -112,24 +120,16 @@ class LeitnerBoxViewModel(
                 initialValue = LeitnerUiState()
             )
 
-    // select next word to show (with priority)
     private var lastShownWordId: Int? = null
 
     fun getNextWordToReview(uiState: LeitnerUiState): Word? {
-
-        // skipped words
         val skipped = uiState.highPriorityWords
-
-        // normal words
         val normal = uiState.normalPriorityWords
 
-        // combine skipped and normal words
-        val orderedList = (skipped + normal)
-            .distinctBy { it.id }   // جلوگیری از duplicate
+        val orderedList = (skipped + normal).distinctBy { it.id }
 
         if (orderedList.isEmpty()) return null
 
-        // delete last shown word from list
         val filtered = orderedList.filter { it.id != lastShownWordId }
 
         val nextWord = when {
@@ -138,7 +138,6 @@ class LeitnerBoxViewModel(
         }
 
         lastShownWordId = nextWord.id
-
         return nextWord
     }
 
@@ -152,11 +151,9 @@ class LeitnerBoxViewModel(
     fun resetMeaning() {
         _meaningWord.value = false
     }
-
-
 }
 
 data class LeitnerUiState(
-    val highPriorityWords: List<Word> = emptyList(), // skipped words
-    val normalPriorityWords: List<Word> = emptyList(), // normal words for review
+    val highPriorityWords: List<Word> = emptyList(),
+    val normalPriorityWords: List<Word> = emptyList(),
 )

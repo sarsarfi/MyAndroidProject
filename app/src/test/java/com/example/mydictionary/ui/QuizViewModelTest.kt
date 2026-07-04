@@ -1,9 +1,9 @@
 package com.example.mydictionary.ui
 
-import WordsRepository
-import com.example.mydictionary.data.GameState
-import com.example.mydictionary.data.GameStateRepository
-import com.example.mydictionary.data.Word
+import com.example.mydictionary.data.repository.WordsRepository
+import com.example.mydictionary.data.entities.WordsState
+import com.example.mydictionary.data.repository.WordStatsRepository
+import com.example.mydictionary.data.entities.Word
 import com.example.mydictionary.ui.quiz.QuizViewModel
 import io.mockk.coEvery
 import io.mockk.every
@@ -26,7 +26,7 @@ class QuizViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val mockWordRepo = mockk<WordsRepository>(relaxed = true)
-    private val mockStateRepo = mockk<GameStateRepository>(relaxed = true)
+    private val mockStateRepo = mockk<WordStatsRepository>(relaxed = true)
 
     private val wordsFlow = MutableStateFlow<List<Word>>(emptyList())
 
@@ -39,11 +39,11 @@ class QuizViewModelTest {
     fun wordRandom_WhenAllCategoriesExist_ShouldBuildCorrectTotalWeight() = runTest {
 
         coEvery { mockStateRepo.getGameStateByWordId(1) } returns null // دسته اول: وزن ۶۰
-        coEvery { mockStateRepo.getGameStateByWordId(2) } returns mockk<GameState> {
+        coEvery { mockStateRepo.getGameStateByWordId(2) } returns mockk<WordsState> {
             every { wrongAnswer } returns 3
             every { correctAnswer } returns 1
         }
-        coEvery { mockStateRepo.getGameStateByWordId(3) } returns mockk<GameState> {
+        coEvery { mockStateRepo.getGameStateByWordId(3) } returns mockk<WordsState> {
             every { wrongAnswer } returns 0
             every { correctAnswer } returns 4
         }

@@ -62,7 +62,7 @@ object HomeDestination : NavigationDestination {
 fun HomeScreen(
     onLeitnerBox: () -> Unit,
     onAllWord: () -> Unit,
-    onExcelWord: () -> Unit,
+    onCategory: () -> Unit,
     modifier: Modifier = Modifier,
     onAbout: () -> Unit,
     onAddWord: () -> Unit,
@@ -80,11 +80,11 @@ fun HomeScreen(
             onClick = onLeitnerBox
         ),
         CategoryItem(
-            titleRes = R.string.list_words_excel,
-            descriptionRes = R.string.description_excel_words,
+            titleRes = R.string.category,
+            descriptionRes = R.string.description_category,
             color = Color(0xFFD1C4E9),
-            icon = R.drawable.excel,
-            onClick = onExcelWord
+            icon = R.drawable.categories,
+            onClick = onCategory
         )
     )
 
@@ -102,13 +102,12 @@ fun HomeScreen(
                 ExtendedFloatingActionButton(
                     onClick = onAddWord,
                     shape = MaterialTheme.shapes.small,
-                    text = { Text(text = "Add New Word") },
+                    text = { Text(text = stringResource(R.string.add_new_word_all_words)) },
                     icon = { Icon(Icons.Filled.Add, "Extended floating action button.") }
                 )
             }
         ) { innerPadding ->
 
-            // فقط یک تابع، با پارامتر deviceType
             ResponsiveHomeContent(
                 innerPadding = innerPadding,
                 deviceType = deviceType,
@@ -388,7 +387,7 @@ fun HomeScreenPreview() {
         HomeScreen(
             onLeitnerBox = {},
             onAllWord = {},
-            onExcelWord = {},
+            onCategory = {},
             onQuiz = {},
             onAbout = {},
             onAddWord = {}

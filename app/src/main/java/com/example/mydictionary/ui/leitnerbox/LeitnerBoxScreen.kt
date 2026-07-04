@@ -1,6 +1,7 @@
 package com.example.mydictionary.ui.leitnerbox
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,8 +17,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.Warning
@@ -36,17 +40,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mydictionary.DictionaryTopAppBar
 import com.example.mydictionary.R
-import com.example.mydictionary.data.Word
+import com.example.mydictionary.data.entities.Word
+import com.example.mydictionary.data.entities.WordsState
 import com.example.mydictionary.ui.AppViewModelProvider
 import com.example.mydictionary.ui.adaptive.DeviceType
 import com.example.mydictionary.ui.adaptive.rememberDeviceType
@@ -70,7 +75,9 @@ fun LeitnerScreen(
     val context = LocalContext.current
     val deviceType = rememberDeviceType()
 
-    // فراخوانی initializeTts فقط یک بار هنگام ورود به صفحه
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     LaunchedEffect(Unit) {
         leitnerBoxViewModel.initializeTts(context)
     }
@@ -96,17 +103,25 @@ fun LeitnerScreen(
                 DeviceType.Tablet -> 0.6f  // 60% صفحه (کوچکتر برای تبلت)
             }
 
-            // تعیین حداقل و حداکثر ارتفاع کارت
-            val cardMinHeight = when (deviceType) {
-                DeviceType.Phone -> 300.dp
-                DeviceType.Foldable -> 350.dp
-                DeviceType.Tablet -> 400.dp
+            // تعیین حداقل و حداکثر ارتفاع کارت با در نظر گرفتن چرخش صفحه
+            val cardMinHeight = if (isLandscape) {
+                200.dp
+            } else {
+                when (deviceType) {
+                    DeviceType.Phone -> 300.dp
+                    DeviceType.Foldable -> 350.dp
+                    DeviceType.Tablet -> 400.dp
+                }
             }
 
-            val cardMaxHeight = when (deviceType) {
-                DeviceType.Phone -> 400.dp
-                DeviceType.Foldable -> 450.dp
-                DeviceType.Tablet -> 500.dp
+            val cardMaxHeight = if (isLandscape) {
+                320.dp
+            } else {
+                when (deviceType) {
+                    DeviceType.Phone -> 400.dp
+                    DeviceType.Foldable -> 450.dp
+                    DeviceType.Tablet -> 500.dp
+                }
             }
 
             Box(
@@ -165,13 +180,17 @@ fun LeitnerScreen(
                     if (isHighPriority) {
                         AdaptiveCartLayoutReview(
                             word = currentWord,
-                            onKnow = { leitnerBoxViewModel.markWordAsLearned(it) },
-                            onDontKnow = { leitnerBoxViewModel.markWordAsForgotten(it) },
+                            onKnow = { selectedWord ->
+                                leitnerBoxViewModel.markWordAsLearned(WordsState(wordId = selectedWord.id, isSkipped = true))
+                            },
+                            onDontKnow = { selectedWord ->
+                                leitnerBoxViewModel.markWordAsForgotten(WordsState(wordId = selectedWord.id, isSkipped = true))
+                            },
                             onClickToShowMeaning = { leitnerBoxViewModel.onClickToShowMeaning() },
                             isMeaningVisible = meaningWord,
                             onSpeakWord = { leitnerBoxViewModel.speakWord(currentWord.english) },
                             deviceType = deviceType,
-                            cardMaxWidth = cardMaxWidth,
+                            isLandscape = isLandscape,
                             cardMinHeight = cardMinHeight,
                             cardMaxHeight = cardMaxHeight,
                             iconSize = iconSize,
@@ -186,13 +205,17 @@ fun LeitnerScreen(
                     } else {
                         AdaptiveCartLayout(
                             word = currentWord,
-                            onKnow = { leitnerBoxViewModel.markWordAsLearned(it) },
-                            onDontKnow = { leitnerBoxViewModel.markWordAsForgotten(it) },
+                            onKnow = { selectedWord ->
+                                leitnerBoxViewModel.markWordAsLearned(WordsState(wordId = selectedWord.id, isSkipped = false))
+                            },
+                            onDontKnow = { selectedWord ->
+                                leitnerBoxViewModel.markWordAsForgotten(WordsState(wordId = selectedWord.id, isSkipped = false))
+                            },
                             onClickToShowMeaning = { leitnerBoxViewModel.onClickToShowMeaning() },
                             isMeaningVisible = meaningWord,
                             onSpeakWord = { leitnerBoxViewModel.speakWord(currentWord.english) },
                             deviceType = deviceType,
-                            cardMaxWidth = cardMaxWidth,
+                            isLandscape = isLandscape,
                             cardMinHeight = cardMinHeight,
                             cardMaxHeight = cardMaxHeight,
                             iconSize = iconSize,
@@ -210,16 +233,11 @@ fun LeitnerScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(16.dp)
                     ) {
-                        Text(
-                            text = "!!!همه کلمات مرور شدند",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontSize = when (deviceType) {
-                                DeviceType.Phone -> 16.sp
-                                DeviceType.Foldable -> 18.sp
-                                DeviceType.Tablet -> 20.sp
-                            },
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.primary
+                        Icon(
+                            imageVector = Icons.Default.Check ,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(100.dp)
                         )
                     }
                 }
@@ -237,7 +255,7 @@ private fun AdaptiveCartLayout(
     isMeaningVisible: Boolean,
     onSpeakWord: () -> Unit,
     deviceType: DeviceType,
-    cardMaxWidth: Float,
+    isLandscape: Boolean,
     cardMinHeight: androidx.compose.ui.unit.Dp,
     cardMaxHeight: androidx.compose.ui.unit.Dp,
     iconSize: androidx.compose.ui.unit.Dp,
@@ -251,14 +269,13 @@ private fun AdaptiveCartLayout(
 ) {
     val context = LocalContext.current
 
-    // تعیین فاصله‌ها بر اساس نوع دستگاه
-    val topSpacing = when (deviceType) {
+    val topSpacing = if (isLandscape) 16.dp else when (deviceType) {
         DeviceType.Phone -> 74.dp
         DeviceType.Foldable -> 60.dp
         DeviceType.Tablet -> 50.dp
     }
 
-    val bottomSpacing = when (deviceType) {
+    val bottomSpacing = if (isLandscape) 24.dp else when (deviceType) {
         DeviceType.Phone -> 85.dp
         DeviceType.Foldable -> 70.dp
         DeviceType.Tablet -> 60.dp
@@ -279,7 +296,9 @@ private fun AdaptiveCartLayout(
         colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()), // اضافه شدن اسکرول عمودی برای جلوگیری از کرش یا خرابی لایوت
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -294,8 +313,8 @@ private fun AdaptiveCartLayout(
                         .size(iconSize)
                         .padding(top = 16.dp, start = 16.dp)
                         .clickable {
-                            val url = "https://www.google.com/search?tbm=isch&q=${word.english}"
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            val urlFromDatabase = word.searchUrl
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(urlFromDatabase))
                             context.startActivity(intent)
                         }
                 )
@@ -398,7 +417,7 @@ private fun AdaptiveCartLayoutReview(
     onSpeakWord: () -> Unit,
     isMeaningVisible: Boolean,
     deviceType: DeviceType,
-    cardMaxWidth: Float,
+    isLandscape: Boolean,
     cardMinHeight: androidx.compose.ui.unit.Dp,
     cardMaxHeight: androidx.compose.ui.unit.Dp,
     iconSize: androidx.compose.ui.unit.Dp,
@@ -412,14 +431,13 @@ private fun AdaptiveCartLayoutReview(
 ) {
     val context = LocalContext.current
 
-    // تعیین فاصله‌ها بر اساس نوع دستگاه
-    val topSpacing = when (deviceType) {
+    val topSpacing = if (isLandscape) 16.dp else when (deviceType) {
         DeviceType.Phone -> 74.dp
         DeviceType.Foldable -> 60.dp
         DeviceType.Tablet -> 50.dp
     }
 
-    val bottomSpacing = when (deviceType) {
+    val bottomSpacing = if (isLandscape) 24.dp else when (deviceType) {
         DeviceType.Phone -> 85.dp
         DeviceType.Foldable -> 70.dp
         DeviceType.Tablet -> 60.dp
@@ -440,7 +458,9 @@ private fun AdaptiveCartLayoutReview(
         colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()), // اضافه شدن اسکرول عمودی برای حالت ریوو
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -455,8 +475,8 @@ private fun AdaptiveCartLayoutReview(
                         .size(iconSize)
                         .padding(top = 16.dp, start = 16.dp)
                         .clickable {
-                            val url = "https://www.google.com/search?tbm=isch&q=${word.english}"
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            val urlFromDatabase = word.searchUrl
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(urlFromDatabase))
                             context.startActivity(intent)
                         }
                 )
@@ -558,7 +578,6 @@ private fun AdaptiveCartLayoutReview(
     }
 }
 
-// نگه داشتن کدهای قدیمی برای Preview
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Preview(showBackground = true, widthDp = 600, heightDp = 800)
 @Preview(showBackground = true, widthDp = 840, heightDp = 1000)
@@ -573,7 +592,7 @@ fun CartLayoutReviewPreview() {
             onSpeakWord = {},
             isMeaningVisible = false,
             deviceType = DeviceType.Phone,
-            cardMaxWidth = 0.9f,
+            isLandscape = false,
             cardMinHeight = 300.dp,
             cardMaxHeight = 400.dp,
             iconSize = 48.dp,
@@ -601,7 +620,7 @@ fun CartLayoutPreview() {
             onSpeakWord = {},
             isMeaningVisible = false,
             deviceType = DeviceType.Phone,
-            cardMaxWidth = 0.9f,
+            isLandscape = false,
             cardMinHeight = 300.dp,
             cardMaxHeight = 400.dp,
             iconSize = 48.dp,
@@ -622,8 +641,7 @@ fun CartLayoutPreview() {
 fun LeitnerBoxPreview() {
     MyDictionaryTheme {
         LeitnerScreen(
-            navigateBack = {},
-            leitnerBoxViewModel = viewModel()
+            navigateBack = {}
         )
     }
 }

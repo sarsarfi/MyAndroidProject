@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mydictionary.DictionaryTopAppBar
 import com.example.mydictionary.R
-import com.example.mydictionary.data.WordReport
+import com.example.mydictionary.data.entities.WordReport
 import com.example.mydictionary.ui.AppViewModelProvider
 import com.example.mydictionary.ui.adaptive.DeviceType
 import com.example.mydictionary.ui.adaptive.rememberDeviceType
@@ -101,6 +101,7 @@ fun ReportScreen(
                     AdaptiveGameSummaryHeader(
                         correct = uiState.totalCorrect,
                         wrong = uiState.totalWrong,
+                        totalGame = uiState.totalGame,
                         deviceType = deviceType
                     )
                 }
@@ -161,6 +162,7 @@ fun ReportScreen(
 fun AdaptiveGameSummaryHeader(
     correct: Int,
     wrong: Int,
+    totalGame : Int ,
     deviceType: DeviceType
 ) {
     // تعیین سایز فونت‌ها
@@ -220,6 +222,20 @@ fun AdaptiveGameSummaryHeader(
                 )
                 Text(
                     "$wrong",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontSize = valueFontSize,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "Total Games",
+                    color = MaterialTheme.colorScheme.primary ,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = labelFontSize
+                )
+                Text(
+                    text = "$totalGame" ,
                     style = MaterialTheme.typography.headlineMedium,
                     fontSize = valueFontSize,
                     fontWeight = FontWeight.Bold

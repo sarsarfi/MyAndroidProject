@@ -24,7 +24,7 @@
     <string name="description_quiz">The test is that the word is displayed as scrambled letters and the user must guess what the word is and press the submit button to display the next word and earn points.</string>
     <string name="categorize_words">Categorize words</string>
     <string name="leitner_box">Leitner box</string>
-    <string name="list_of_all_words">The list of all words is located in this section (all the words you received from Excel, the words you entered yourself, and the words rejected from the word guessing game).</string>
+    <string name="list_of_all_words">The list of all words is located in this section (all the words you received from categories and the words rejected from the word guessing game).</string>
     <string name="list_words_excel">Excel word list</string>
     <string name="description_leitner_box">In this section, the vocabulary list is displayed as flashcards.</string>
     <string name="description_all_words">List of all words</string>
@@ -41,5 +41,19 @@
     <string name="edit_screen">Edit Word</string>
     <string name="skipped_words">Skipped Words</string>
     <string name="the_rest_of_words">The rest of the words</string>
+    <string name="category">Classification of words</string>
+    <string name="category_title">Category</string>
+    <string name="description_category">Create categories for your own words</string>
+    <string name="add_new_category">Define your category name</string>"
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="category_name">Category name</string>
+    <string name="create_new_category">Create a new category</string>
+    <string name="rest_word_category">The rest of the words in this category</string>
+    <string name="delete">Delete</string>
+    <string name="import_from_excel">Import from Excel</string>
+    <string name="add_manual_vocabulary">Add manual vocabulary</string>
+    <string name="word_list_in_category">Word List In Category</string>
+    <string name="add_new_word_all_words">Add New Word To All Words</string>
     <string name="repair_description">You can edit your word by selecting the Edit button and delete it by selecting the Delete button.</string>
 </resources>

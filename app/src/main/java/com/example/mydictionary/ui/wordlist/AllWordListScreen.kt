@@ -1,16 +1,39 @@
 package com.example.mydictionary.ui.wordlist
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.VolumeUp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -25,7 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mydictionary.DictionaryTopAppBar
 import com.example.mydictionary.R
-import com.example.mydictionary.data.Word
+import com.example.mydictionary.data.entities.Word
 import com.example.mydictionary.ui.AppViewModelProvider
 import com.example.mydictionary.ui.adaptive.DeviceType
 import com.example.mydictionary.ui.adaptive.rememberDeviceType
@@ -66,7 +89,7 @@ fun WordListScreen(
                     navigateUp = navigateBack
                 )
             },
-            floatingActionButton = {
+           /* floatingActionButton = {
                 FloatingActionButton(
                     onClick = navigateToAddNewWord,
                     shape = MaterialTheme.shapes.small,
@@ -90,7 +113,7 @@ fun WordListScreen(
                         )
                     )
                 }
-            }
+            }*/
         ) { innerPadding ->
             AdaptiveWordListBody(
                 wordsList = listUiState.wordsList,
@@ -102,7 +125,8 @@ fun WordListScreen(
                 onDelete = { word -> wordListViewModel.deleteWord(word) },
                 onSpeakWord = { word -> wordListViewModel.speakWord(word.english) },
                 deviceType = deviceType,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize() ,
+                totalWords = listUiState.totalWords
             )
         }
     }
@@ -110,6 +134,7 @@ fun WordListScreen(
 
 @Composable
 fun AdaptiveWordListBody(
+    totalWords: Int,
     wordsList: List<Word>,
     onUpdateWord: (Word) -> Unit,
     modifier: Modifier = Modifier,
@@ -182,7 +207,8 @@ fun AdaptiveWordListBody(
                 deviceType = deviceType,
                 itemSpacing = itemSpacing,
                 sectionTitleFontSize = sectionTitleFontSize,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize() ,
+                totalWords = totalWords as Int
             )
         }
     }
@@ -190,6 +216,7 @@ fun AdaptiveWordListBody(
 
 @Composable
 private fun AdaptiveListWords(
+    totalWords : Int ,
     wordsList: List<Word>,
     contentPadding: PaddingValues,
     skippedWords: List<Word>,
@@ -203,6 +230,7 @@ private fun AdaptiveListWords(
     val skippedEnglishFontSize = when (deviceType) {
         DeviceType.Phone -> 16.sp
         DeviceType.Foldable -> 18.sp
+
         DeviceType.Tablet -> 20.sp
     }
 
@@ -269,16 +297,28 @@ private fun AdaptiveListWords(
         }
 
         item(key = "header_rest_of_words") {
-            Text(
-                text = stringResource(R.string.the_rest_of_words),
-                style = MaterialTheme.typography.titleMedium,
-                fontSize = sectionTitleFontSize,
-                modifier = Modifier.padding(
-                    start = if (isPhone) 8.dp else 0.dp,
-                    bottom = 4.dp,
-                    top = if (skippedWords.isNotEmpty()) 16.dp else 8.dp
+            Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+                Text(
+                    text = stringResource(R.string.the_rest_of_words),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = sectionTitleFontSize,
+                    modifier = Modifier.padding(
+                        start = if (isPhone) 8.dp else 0.dp,
+                        bottom = 4.dp,
+                        top = if (skippedWords.isNotEmpty()) 16.dp else 8.dp
+                    )
                 )
-            )
+                Text(
+                    text = "$totalWords" ,
+                    style = MaterialTheme.typography.titleMedium ,
+                    fontSize = sectionTitleFontSize ,
+                    modifier = Modifier.padding(
+                        start = if (isPhone) 8.dp else 0.dp,
+                        bottom = 4.dp,
+                        top = if (skippedWords.isNotEmpty()) 16.dp else 8.dp
+                    )
+                )
+            }
         }
 
         items(
@@ -559,7 +599,8 @@ fun WordListBodyPreview(){
             ),
             onDelete = {},
             deviceType = DeviceType.Phone,
-            contentPadding = PaddingValues(0.dp)
+            contentPadding = PaddingValues(0.dp) ,
+            totalWords = 0
         )
     }
 }

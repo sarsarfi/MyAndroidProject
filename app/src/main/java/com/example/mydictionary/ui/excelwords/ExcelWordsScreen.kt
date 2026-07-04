@@ -11,11 +11,9 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,7 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mydictionary.DictionaryTopAppBar
 import com.example.mydictionary.R
-import com.example.mydictionary.data.Word
+import com.example.mydictionary.data.entities.Word
 import com.example.mydictionary.ui.AppViewModelProvider
 import com.example.mydictionary.ui.adaptive.DeviceType
 import com.example.mydictionary.ui.adaptive.rememberDeviceType
@@ -56,7 +54,6 @@ object ExcelWordsScreenDestination : NavigationDestination {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExcelWordListScreen(
-    navigateToExcel: () -> Unit,
     navigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     excelWordsViewModel: ExcelWordsViewModel = viewModel(factory = AppViewModelProvider.Factory),
@@ -135,7 +132,7 @@ private fun AdaptiveWordListBody(
     deviceType: DeviceType = DeviceType.Phone
 ) {
     val listHorizontalPadding = when (deviceType) {
-        DeviceType.Phone -> 16.dp // اضافه کردن پدینگ برای گوشی جهت زیبایی و عدم چسبیدن به لبه‌ها
+        DeviceType.Phone -> 16.dp
         DeviceType.Foldable -> 24.dp
         DeviceType.Tablet -> 32.dp
     }
@@ -171,7 +168,7 @@ private fun AdaptiveWordListBody(
                     start = contentPadding.calculateStartPadding(LayoutDirection.Ltr) + listHorizontalPadding,
                     end = contentPadding.calculateEndPadding(LayoutDirection.Ltr) + listHorizontalPadding,
                     top = contentPadding.calculateTopPadding() + 8.dp,
-                    bottom = contentPadding.calculateBottomPadding() + 80.dp // پدینگ برای نرفتن زیر FAB
+                    bottom = contentPadding.calculateBottomPadding() + 80.dp
                 ),
                 deviceType = deviceType,
                 itemSpacing = itemSpacing,
@@ -284,7 +281,6 @@ fun ExcelWordsScreenPreview() {
     MyDictionaryTheme {
         ExcelWordListScreen(
             excelWordsViewModel = viewModel(),
-            navigateToExcel = {},
             navigateBack = {}
         )
     }
@@ -297,7 +293,6 @@ fun ExcelWordsScreenPreview() {
 fun EmptyListPreview() {
     MyDictionaryTheme {
         ExcelWordListScreen(
-            navigateToExcel = {},
             navigateBack = {},
         )
     }

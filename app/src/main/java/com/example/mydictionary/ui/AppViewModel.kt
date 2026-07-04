@@ -6,12 +6,14 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.mydictionary.DictionaryApplication
 import com.example.mydictionary.ui.addword.AddWordViewModel
+import com.example.mydictionary.ui.categorywords.CategoryViewModel
+import com.example.mydictionary.ui.categorywords.wordsincategory.WordListCategoryViewModel
 import com.example.mydictionary.ui.editword.WordEditViewModel
 import com.example.mydictionary.ui.excelwords.ExcelWordsViewModel
 import com.example.mydictionary.ui.leitnerbox.LeitnerBoxViewModel
 import com.example.mydictionary.ui.quiz.QuizViewModel
-import com.example.mydictionary.ui.wordlist.WordListViewModel
 import com.example.mydictionary.ui.report.ReportViewModel
+import com.example.mydictionary.ui.wordlist.WordListViewModel
 
 object AppViewModelProvider {
     val Factory: ViewModelProvider.Factory = viewModelFactory {
@@ -20,19 +22,21 @@ object AppViewModelProvider {
                 ?: throw IllegalStateException("DictionaryApplication is not registered in AndroidManifest.xml")
 
             val repository = application.container.wordsRepository
-            AddWordViewModel(repository)
+            val wordCategoryCrossRefRepository = application.container.wordCategoryCrossRefRepository
+            AddWordViewModel(repository, wordCategoryCrossRefRepository, this.createSavedStateHandle())
         }
         initializer {
             val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as? DictionaryApplication
                 ?: throw IllegalStateException("DictionaryApplication is not registered in AndroidManifest.xml")
 
             val repository = application.container.wordsRepository
-            WordListViewModel(repository)
+            val stateRepository = application.container.wordStatsRepository
+            WordListViewModel(repository , stateRepository)
         }
         initializer {
             val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as? DictionaryApplication
                 ?: throw IllegalStateException("DictionaryApplication is not registered in AndroidManifest.xml")
-            val repository = application.container.wordsRepository
+            val repository = application.container.wordStatsRepository
 
             LeitnerBoxViewModel(repository)
         }
@@ -40,14 +44,15 @@ object AppViewModelProvider {
             val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as? DictionaryApplication
                 ?: throw IllegalStateException("DictionaryApplication is not registered in AndroidManifest.xml")
             val repository = application.container.wordsRepository
-            val gameStateRepository = application.container.gameStateRepository
+            val gameStateRepository = application.container.wordStatsRepository
             QuizViewModel(repository, gameStateRepository)
         }
         initializer {
             val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as? DictionaryApplication
                 ?: throw IllegalStateException("DictionaryApplication is not registered in AndroidManifest.xml")
             val repository = application.container.wordsRepository
-            ExcelWordsViewModel(repository)
+            val wordCategoryCrossRefRepository = application.container.wordCategoryCrossRefRepository
+            ExcelWordsViewModel(repository , wordCategoryCrossRefRepository, this.createSavedStateHandle())
         }
         initializer { val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as? DictionaryApplication
                 ?: throw IllegalStateException("DictionaryApplication is not registered in AndroidManifest.xml")
@@ -60,8 +65,21 @@ object AppViewModelProvider {
             val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as? DictionaryApplication
                 ?: throw IllegalStateException("DictionaryApplication is not registered in AndroidManifest.xml")
             val repository = application.container.wordsRepository
-            val gameStateRepository = application.container.gameStateRepository
+            val gameStateRepository = application.container.wordStatsRepository
             ReportViewModel(repository, gameStateRepository)
+        }
+
+        initializer {
+            val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as? DictionaryApplication
+                ?: throw IllegalStateException("DictionaryApplication is not registered in AndroidManifest.xml")
+            val repository = application.container.categoryRepository
+            CategoryViewModel(repository)
+        }
+        initializer {
+            val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as? DictionaryApplication
+                ?: throw IllegalStateException("DictionaryApplication is not registered in AndroidManifest.xml")
+            val repository = application.container.wordCategoryCrossRefRepository
+            WordListCategoryViewModel(repository, this.createSavedStateHandle())
         }
     }
 }

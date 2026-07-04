@@ -1,0 +1,111 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam shadowing false
+
+title Class & Architecture Diagram - My Dictionary Application
+
+' ۱. لایه اول: دیتا و دیتابیس
+package "Data & Room Database Layer" as PKG_Data {
+    class "DictionaryDatabase" {
+        + wordDao(): WordDao
+        + categoryDao(): CategoryDao
+        + wordCategoryCrossRefDao()
+        + wordStatsDao(): WordStatsDao
+    }
+    package "DAOs" {
+        interface "WordDao" as WD
+        interface "CategoryDao" as CD
+        interface "WordCategoryCrossRefDao" as CRD
+        interface "WordStatsDao" as SD
+    }
+}
+
+' ۲. لایه دوم: ریپازیتوری‌ها
+package "Repository Layer" as PKG_Repo {
+    interface "WordsRepository" as R_W
+    interface "CategoryRepository" as R_C
+    interface "WordCategoryCrossRefRepository" as R_CR
+    interface "WordStatsRepository" as R_S
+
+    class "OfflineWordsRepository" as O_W implements R_W
+    class "OfflineCategoryRepository" as O_C implements R_C
+    class "OfflineWordCategoryCrossRefRepository" as O_CR implements R_CR
+    class "OfflineWordStatsRepository" as O_S implements R_S
+}
+
+' ۳. لایه سوم: تزریق وابستگی
+package "Dependency Injection" as PKG_DI {
+    interface "AppContainer" {
+        + wordsRepository
+        + categoryRepository
+        + wordCategoryCrossRefRepository
+        + wordStatsRepository
+    }
+    class "AppDataContainer" as ADC implements AppContainer
+}
+
+' ۴. لایه چهارم: ویومدل‌ها (چیدمان داخلی دو ستونه)
+package "UI & ViewModels (MVVM)" as PKG_UI {
+    ' ستون اول ویومدل‌ها
+    class "CategoryViewModel" as VM_Cat
+    class "WordListCategoryViewModel" as VM_ListCat
+    class "AddWordViewModel" as VM_Add
+    class "WordListViewModel" as VM_List
+
+    ' ستون دوم ویومدل‌ها
+    class "ExcelViewModel" as VM_Ex
+    class "LeitnerBoxViewModel" as VM_Leitner
+    class "ReportViewModel" as VM_Rep
+    class "QuizViewModel" as VM_Quiz
+
+    ' ترفند چیدمان دو ستونه در لایه UI
+    VM_Cat -[hidden]right-> VM_Ex
+    VM_ListCat -[hidden]right-> VM_Leitner
+    VM_Add -[hidden]right-> VM_Rep
+    VM_List -[hidden]right-> VM_Quiz
+
+    ' اتصال عمودی ستون‌ها زیر هم برای فشرده‌سازی
+    VM_Cat -[hidden]down-> VM_ListCat
+    VM_ListCat -[hidden]down-> VM_Add
+    VM_Add -[hidden]down-> VM_List
+
+    VM_Ex -[hidden]down-> VM_Leitner
+    VM_Leitner -[hidden]down-> VM_Rep
+    VM_Rep -[hidden]down-> VM_Quiz
+}
+
+' --- چیدمان قطاری عمودی پکیج‌های اصلی ---
+PKG_Data -[hidden]down-> PKG_Repo
+PKG_Repo -[hidden]down-> PKG_DI
+PKG_DI -[hidden]down-> PKG_UI
+
+' روابط لایه دیتا
+DictionaryDatabase --> WD
+DictionaryDatabase --> CD
+DictionaryDatabase --> CRD
+DictionaryDatabase --> SD
+
+' ارتباط موازی و تمیز بین لایه‌های عمودی
+O_W --> WD
+O_C --> CD
+O_CR --> CRD
+O_S --> SD
+
+ADC --> R_W
+ADC --> R_C
+ADC --> R_CR
+ADC --> R_S
+
+' ارتباط ویومدل‌ها به ریپازیتوری‌ها
+VM_Cat --> R_C
+VM_ListCat --> R_CR
+VM_ListCat --> R_C
+VM_Add --> R_W
+VM_List --> R_W
+VM_Ex --> R_W
+VM_Leitner --> R_W
+VM_Rep --> R_S
+VM_Quiz --> R_W
+
+@endum

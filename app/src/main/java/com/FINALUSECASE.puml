@@ -1,0 +1,116 @@
+@startuml
+' تنظیمات استایل و افزایش سایز فونت‌ها برای وضوح بالاتر مطابق تصویر
+skinparam BackgroundColor #FFFFFF
+skinparam DefaultFontName "Arial"
+skinparam DefaultFontStyle bold
+skinparam DefaultFontSize 15
+
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+' استایل یوزکیس‌ها: پس‌زمینه سفید با کادر خاکستری تیره مطابق تصویر
+skinparam UseCaseFontStyle bold
+skinparam UseCaseFontSize 14
+skinparam UseCaseBackgroundColor #FFFFFF
+skinparam UseCaseBorderColor #7F7F7F
+
+' استایل پکیج‌ها و کادر اصلی: بدون رنگ ضخیم، با پس‌زمینه شفاف/سفید و فونت بزرگ
+skinparam PackageFontStyle bold
+skinparam PackageFontSize 16
+skinparam PackageBackgroundColor #FFFFFF
+skinparam PackageBorderColor #000000
+
+skinparam ArrowFontStyle bold
+skinparam ArrowFontSize 12
+skinparam ArrowColor #000000
+skinparam ActorBorderColor #000000
+skinparam ActorBackgroundColor #FFFFFF
+
+' چیدمان افقی و باز با فواصل بیشتر برای جلوگیری از درهم‌ریختگی متون روابط
+left to right direction
+skinparam nodesep 70
+skinparam ranksep 90
+
+actor "User" as User
+
+rectangle "Dictionary & Leitner Box System" {
+
+    ' لایه اول: مدیریت واژگان کلی
+    package "Word Management" as PKG1 {
+        usecase "All Words" as UC_AllWords
+        usecase "Add Word\n(via Main Screen FAB)" as UC_Add_Direct
+        usecase "Edit / Delete\nWord" as UC_EditWord
+    }
+
+    ' لایه دوم: مدیریت دسته‌بندی‌ها
+    package "Category Management" as PKG2 {
+        usecase "Categories Screen" as UC_Category
+        usecase "Create New\nCategory" as UC_CreateCategory
+
+        ' صفحه لیست لغات که با کلیک روی هر دسته باز می‌شود
+        usecase "Words in Category\nScreen" as UC_WordsInCat
+
+        usecase "Add Word\n(Manual to Category)" as UC_Add_To_Category
+        usecase "Import Words from\nExcel to Category" as UC_Import_To_Category
+        usecase "Edit / Delete Word\nin Category" as UC_Edit_In_Category
+    }
+
+    ' لایه سوم: آزمون و یادگیری لایتنر
+    package "Quiz & Leitner System" as PKG3 {
+        usecase "Quiz" as UC_Quiz
+        usecase "Leitner Box" as UC_Leitner
+        usecase "Automatic Word\nCard Progression" as UC_Transfer
+        usecase "Search Images" as UC_SearchImages
+        usecase "Hide Word Meaning" as UC_HideMeaning
+    }
+
+    ' لایه چهارم: گزارشات و ویژگی‌های مشترک
+    package "Analytics & Shared Core" as PKG4 {
+        usecase "TTS" as UC_TTS
+        usecase "Reports" as UC_Report
+        usecase "7-Day Added\nWords Analytics" as UC_DaysActivity
+        usecase "Total Games,\nCorrect/Wrong" as UC_OverallGameStats
+        usecase "Top 5 Hardest\nWords" as UC_HardWords
+    }
+}
+
+' تنظیم توازن و چیدمان عمودی کادرها دقیقا مثل عکس ورودی
+PKG1 -[hidden]down-> PKG2
+PKG2 -[hidden]down-> PKG3
+PKG3 -[hidden]down-> PKG4
+
+' ارتباطات اکتور با بخش‌های اصلی
+User ----> UC_AllWords
+User ----> UC_Category
+User ----> UC_Quiz
+User ----> UC_Leitner
+User ----> UC_Report
+
+' روابط داخلی پکیج کلمات عمومی (پخش صدا اختیاری است)
+UC_AllWords .> UC_Add_Direct : <<extend>>
+UC_AllWords .> UC_EditWord : <<extend>>
+UC_AllWords .> UC_TTS : <<extend>>
+
+' روابط پکیج دسته‌بندی (تفکیک دو صفحه و دسترسی به لغات هر دسته)
+UC_Category .> UC_CreateCategory : <<extend>>
+UC_Category ..> UC_WordsInCat : <<include>>
+
+' ویژگی‌های صفحه کلماتِ درون دسته (تلفظ اختیاری است)
+UC_WordsInCat .> UC_Add_To_Category : <<extend>>
+UC_WordsInCat .> UC_Import_To_Category : <<extend>>
+UC_WordsInCat .> UC_Edit_In_Category : <<extend>>
+UC_WordsInCat .> UC_TTS : <<extend>>
+
+' روابط داخلی پکیج آزمون و لایتنر (کوییز اجباری، بقیه اختیاری)
+UC_Quiz ..> UC_TTS : <<include>>
+UC_Leitner .> UC_TTS : <<extend>>
+UC_Leitner ..> UC_Transfer : <<include>>
+UC_Leitner ..> UC_HideMeaning : <<include>>
+UC_Leitner .> UC_SearchImages : <<extend>>
+
+' روابط داخلی پکیج گزارشات
+UC_Report ..> UC_DaysActivity : <<include>>
+UC_Report ..> UC_OverallGameStats : <<include>>
+UC_Report ..> UC_HardWords : <<include>>
+
+@endum

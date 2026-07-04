@@ -1,7 +1,6 @@
 package com.example.mydictionary.ui.addword
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,6 +43,7 @@ object AddWordDestination : NavigationDestination {
     override val titleRes = R.string.add_new_word
 }
 
+// ۱. این کامپوزبل فقط در ناوبری برنامه (Navigation) صدا زده می‌شود
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddWordScreen(
@@ -51,36 +51,54 @@ fun AddWordScreen(
     navigateBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val deviceType = rememberDeviceType()
 
-    MyDictionaryTheme {
-        Scaffold(
-            topBar = {
-                DictionaryTopAppBar(
-                    title = stringResource(AddWordDestination.titleRes),
-                    canNavigateBack = true,
-                    scrollBehavior = scrollBehavior,
-                    navigateUp = navigateBack
-                )
+    // ارسال داده‌ها به کامپوزبل پایینی بدون درگیر کردن کدهای دیتابیس در Preview
+    AddWordScreenContent(
+        uiState = uiState,
+        deviceType = deviceType,
+        onValueChange = viewModel::update,
+        onSaveWord = {
+            viewModel.saveWord {
+                navigateBack()
             }
-        ) { innerPadding ->
+        },
+        navigateBack = navigateBack
+    )
+}
 
-            // محتوای adaptive
-            AdaptiveWordEntryBody(
-                addWordUiState = uiState,
-                onValueChange = viewModel::update,
-                onSaveWord = {
-                    viewModel.saveWord {
-                        navigateBack()
-                    }
-                },
-                deviceType = deviceType,
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize()
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddWordScreenContent(
+    uiState: AddWordUiState,
+    deviceType: DeviceType,
+    onValueChange: (AddWordDetails) -> Unit,
+    onSaveWord: () -> Unit,
+    navigateBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+    Scaffold(
+        topBar = {
+            DictionaryTopAppBar(
+                title = stringResource(AddWordDestination.titleRes),
+                canNavigateBack = true,
+                scrollBehavior = scrollBehavior,
+                navigateUp = navigateBack
             )
-        }
+        },
+        modifier = modifier
+    ) { innerPadding ->
+        AdaptiveWordEntryBody(
+            addWordUiState = uiState,
+            onValueChange = onValueChange,
+            onSaveWord = onSaveWord,
+            deviceType = deviceType,
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        )
     }
 }
 
@@ -413,12 +431,26 @@ private fun WordInputForm(
     }
 }
 
-@Preview(showBackground = true, widthDp = 360, heightDp = 640)
-@Preview(showBackground = true, widthDp = 600, heightDp = 800)
-@Preview(showBackground = true, widthDp = 840, heightDp = 1000)
+@Preview(showBackground = true, widthDp = 360, heightDp = 640, name = "Phone")
+@Preview(showBackground = true, widthDp = 600, heightDp = 800, name = "Foldable")
+@Preview(showBackground = true, widthDp = 840, heightDp = 1000, name = "Tablet")
 @Composable
 fun AddWordScreenPreview() {
     MyDictionaryTheme {
-        AddWordScreen(navigateBack = {})
+        val mockUiState = AddWordUiState(
+            addWordDetails = AddWordDetails(
+                englishWord = "developer",
+                meaningWord = "توسعه دهنده"
+            ),
+            isValid = true
+        )
+
+        AddWordScreenContent(
+            uiState = mockUiState,
+            deviceType = DeviceType.Phone,
+            onValueChange = {},
+            onSaveWord = {},
+            navigateBack = {}
+        )
     }
 }

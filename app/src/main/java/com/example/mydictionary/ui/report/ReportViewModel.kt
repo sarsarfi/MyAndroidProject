@@ -1,10 +1,10 @@
 package com.example.mydictionary.ui.report
 
-import WordsRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.mydictionary.data.GameStateRepository
-import com.example.mydictionary.data.WordReport
+import com.example.mydictionary.data.entities.WordReport
+import com.example.mydictionary.data.repository.WordStatsRepository
+import com.example.mydictionary.data.repository.WordsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,12 +13,14 @@ import kotlinx.coroutines.launch
 import saman.zamani.persiandate.PersianDate
 import saman.zamani.persiandate.PersianDateFormat
 import java.util.concurrent.TimeUnit
+import kotlin.math.ceil
 
 data class ReportUiState(
     val isLoading: Boolean = false,
     val weeklyChartData: List<ChartData> = emptyList(),
     val totalCorrect: Int = 0,
     val totalWrong: Int = 0,
+    val totalGame : Int = 0 ,
     val wordReports: List<WordReport> = emptyList(),
     val topHardWords: List<WordReport> = emptyList()
 )
@@ -30,7 +32,7 @@ data class ChartData(
 
 class ReportViewModel(
     private val wordsRepository: WordsRepository,
-    private val gameStatsRepository: GameStateRepository
+    private val wordStatsRepository: WordStatsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ReportUiState())
@@ -69,7 +71,7 @@ class ReportViewModel(
             // دریافت آمار بازی‌ها
             launch {
 
-                gameStatsRepository.getFullReport().collect { reportList ->
+                wordStatsRepository.getFullReport().collect { reportList ->
 
                     val correct =
                         reportList.sumOf { it.correctCount }
@@ -83,11 +85,14 @@ class ReportViewModel(
                             .sortedByDescending { it.wrongCount }
                             .take(5)
 
+                    val allGamesTotal = ceil((correct + wrong) / 10.0).toInt() // گرد کردن رو به بالا
+
                     _uiState.update {
 
                         it.copy(
                             totalCorrect = correct,
                             totalWrong = wrong,
+                            totalGame = allGamesTotal,
                             wordReports = reportList,
                             topHardWords = hardWords,
                             isLoading = false

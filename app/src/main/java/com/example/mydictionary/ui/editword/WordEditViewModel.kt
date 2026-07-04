@@ -1,11 +1,16 @@
 package com.example.mydictionary.ui.editword
 
-import WordsRepository
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.mydictionary.data.Word
-import kotlinx.coroutines.flow.*
+import com.example.mydictionary.data.entities.Word
+import com.example.mydictionary.data.repository.WordsRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 
@@ -20,11 +25,16 @@ data class WordDetails(
 )
 
 
-fun WordDetails.toWord(): Word = Word(
-    id = id,
-    english = englishWord.trim(),
-    persian = meaningWord.trim()
-)
+fun WordDetails.toWord(): Word {
+    val trimmedEnglish = englishWord.trim().lowercase() //lowercase برای یکدستی داده‌ها
+    return Word(
+        id = id,
+        english = trimmedEnglish,
+        persian = meaningWord.trim(),
+        //  آدرس جدید بر اساس کلمه انگلیسیِ ویرایش‌شده ساخته می‌شود تا با تغییر کلمه، لینک هم اصلاح شود
+        searchUrl = "https://www.google.com/search?tbm=isch&q=$trimmedEnglish"
+    )
+}
 
 fun Word.toWordDetails(): WordDetails = WordDetails(
     id = id,
