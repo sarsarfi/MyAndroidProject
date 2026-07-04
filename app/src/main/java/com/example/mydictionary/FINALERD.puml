@@ -1,0 +1,44 @@
+@startuml
+!theme plain
+hide circle
+skinparam linetype ortho
+
+entity "Word" as word {
+  * **id** : int <<PK>>
+  --
+  english : String
+  persian : String
+  isDeleted : Boolean
+  dateAdded : Long
+  searchUrl : String
+}
+
+entity "word_stats" as stats {
+  * **id** : int <<PK>>
+  --
+  * *word_id* : int <<FK>>
+  correct : int
+  wrong : int
+  leitnerBox : int
+  nextReview : Long
+  isSkipped : Boolean
+}
+
+entity "category" as category {
+  * **id** : int <<PK>>
+  --
+  nameCategory : String
+  dateAdded : Long
+}
+
+entity "word_category_cross_ref" as cross_ref {
+  * *category_id* : int <<PK>> <<FK>>
+  * *word_id* : int <<PK>> <<FK>>
+}
+
+' روابط بین جدول‌ها بر اساس تصویر erfinal.jpg
+word ||--|| stats : "one-to-one"
+word ||--o{ cross_ref : "one-to-many"
+category ||--o{ cross_ref : "one-to-many"
+
+@endum
